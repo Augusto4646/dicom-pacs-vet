@@ -1,0 +1,20 @@
+{
+  "Name": "Orthanc",
+  "StorageDirectory": "/var/lib/orthanc/db",
+  "IndexDirectory": "/var/lib/orthanc/db",
+  "AuthenticationEnabled": false,
+  "RemoteAccessAllowed": true,
+  "DicomWeb": {
+    "Enable": true,
+    "Root": "/dicom-web/"
+  },
+  "WebHooks": {
+    "Enable": true,
+    "Hooks": [
+      {
+        "Url": "http://django-docker:8000/api/webhook/novo-exame/",
+        "Events": ["NewInstance"]
+      }
+    ]
+  }
+}

@@ -1,0 +1,544 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Arthur Diagnóstico por Imagem</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+
+    <style> 
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: #f9fbfb;
+        }
+
+        /* ================= HEADER ================= */
+
+        header {
+            background: #fff;
+            position: relative;
+        }
+
+        .header-inner {
+            max-width: 1350px;
+            margin: auto;
+            display: flex;
+            max-height: 140px;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .left-group {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .logo img {
+            height: 200px;
+            width: 200px;
+        }
+
+        nav {
+            display: flex;
+            gap: 30px;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: .2s;
+        }
+
+        nav a:hover {
+            color: #00a3a3;
+        }
+
+        .auth {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .login-btn {
+            background: transparent;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .login-btn:hover {
+            color: #00a3a3;
+        }
+
+        .cta-btn {
+            background: #00a3a3;
+            color: #fff;
+            border: white;
+            padding: 14px 30px;
+            font-weight: 700;
+            border-radius: 10px;
+            box-shadow: 0 6px 18px rgba(0, 163, 163, .3);
+            cursor: pointer;
+            transition: .2s;
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 163, 163, .4);
+        }
+
+        /* ================= HERO ================= */
+
+        .hero {
+            padding: 4.5rem 6rem;
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            align-items: center;
+            min-height: 85vh;
+            background:
+                radial-gradient(circle at 80% 30%, rgba(0, 163, 163, .08), transparent 50%),
+                linear-gradient(120deg, #ffffff 60%, #f4fbfb 100%);
+        }
+
+        .hero h1 span {
+            display: block;
+            line-height: 1.1;
+        }
+
+        .l1 {
+            font-size: 60px;
+            font-weight: 800;
+            color: #1e1e1e;
+        }
+
+        .l2 {
+            font-size: 60px;
+            font-weight: 800;
+            color: #00a3a3;
+        }
+
+        .l3 {
+            font-size: 60px;
+            font-weight: 600;
+            color: #1e1e1e;
+        }
+
+        .hero p {
+            margin-top: 25px;
+            font-size: 18px;
+            max-width: 520px;
+            color: #555;
+        }
+
+        /* ================= MÉTRICAS ================= */
+
+        .metricas {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .card-metrica {
+            background: #ffffff;
+            padding: 2rem;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 163, 163, .4);
+        }
+
+        .card-metrica h3 {
+            font-size: 34px;
+            font-weight: 800;
+            color: #00a3a3;
+        }
+
+        .card-metrica p {
+            margin-top: 8px;
+            color: #555;
+        }
+
+        /* ================= COMO FUNCIONA ================= */
+
+        .como-funciona {
+            padding: 4.5rem 6rem;
+            background: #f4fbfb;
+        }
+
+        .como-funciona h2 {
+            text-align: center;
+            font-weight: 800;
+            margin-bottom: 3rem;
+        }
+
+        .passos {
+            display: flex;
+            gap: 30px;
+        }
+
+        .passo {
+            flex: 1;
+            background: #fff;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 163, 163, .4);
+        }
+
+        .passo h4 {
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #00a3a3;
+        }
+
+        /* ================= SOBRE ================= */
+
+        .sobre-nos {
+            padding: 4.5rem 6rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            align-items: center;
+            background:#FFFFFF;
+        }
+
+        .sobre-nos-imagem img {
+            width: 100%;
+            max-width: 500px;
+            border: none;
+        }
+
+        .card-metrica-sobre {
+            background: #ffffff;
+            padding: 2rem;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 163, 163, .4);
+        }
+
+        /* ================= DEPOIMENTOS ================= */
+
+        .depoimentos {
+            padding: 4.5rem 6rem;
+            background: #f4fbfb;
+        }
+
+        .depoimentos h2 {
+            text-align: center;
+            margin-bottom: 3rem;
+            font-weight: 800;
+        }
+
+        .carousel-inner {
+            border-radius: 12px;
+            background: red;
+            overflow: hidden;
+        }
+
+        .botao-profissionais {
+            border: none;
+        }
+
+        /* ================= FOOTER ================= */
+
+        footer {
+            background: #ffffff;
+            padding: 3.5rem 2rem;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 40px;
+        }
+
+        .footer-brand p {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .footer-info {
+            display: flex;
+            gap: 10px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .footer-info i {
+            color: #00a3a3;
+        }
+
+
+        @media (max-width: 768px) {
+            .footer-container {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .footer-info {
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .hero {
+                grid-template-columns: 1fr;
+                padding: 4rem 2rem;
+                min-height: auto;
+            }
+
+            .metricas {
+                margin-top: 40px;
+            }
+
+            .passos {
+                flex-direction: column;
+            }
+
+            .sobre-nos {
+                grid-template-columns: 1fr;
+                padding: 4rem 2rem;
+            }
+
+            footer {
+                flex-direction: column;
+                gap: 20px;
+                padding: 3rem 2rem;
+            }
+
+            .l1,
+            .l2,
+            .l3 {
+                font-size: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-inner">
+
+            <div class="left-group">
+                <div class="logo">
+<img src="{% static 'img/PF.jpg' %}" alt="Logo">
+                </div>
+
+                <nav>
+                    <a href="#">Home</a>
+                    <a href="#">Como funciona</a>
+                    <a href="#">Sobre nós</a>
+                    <a href="#">Contato</a>
+                </nav>
+            </div>
+
+            <div class="auth">
+                <button class="login-btn">Login</button>
+                <button class="cta-btn">Acessar Laudos Online</button>
+            </div>
+
+        </div>
+        
+    </header>
+
+
+    <!-- HERO -->
+    <section class="hero">
+
+        <div>
+            <h1>
+                <span class="l1">EXAMES DE IMAGEM A DOMICÍLIO</span>
+                <span class="l2">BASEADOS EM TECNOLOGIA</span>
+                <span class="l3">E EXCELÊNCIA CLÍNICA</span>
+            </h1>
+
+            <p>
+                Diagnóstico por imagem veterinário no domicílio, com laudos digitais em até 24h,
+                realizados por especialistas para decisões clínicas mais precisas e seguras.
+                <br><br>
+                 </p>
+                <a href="http://localhost/sistemaAltur/Executivo.php"><button class="cta-btn">Acessar Laudos Online</button></a>
+        </div>
+
+        <div class="metricas">
+            <div class="card-metrica">
+                <h3>+200</h3>
+                <p>Exames realizados por mês</p>
+            </div>
+
+            <div class="card-metrica">
+                <h3>+9</h3>
+                <p>Cidades atendidas</p>
+            </div>
+
+            <div class="card-metrica">
+                <h3>24h</h3>
+                <p>Laudos digitais em até 24h com especialistas</p>
+            </div>
+
+        </div>
+
+    </section>
+
+ 
+    <!-- COMO FUNCIONA -->
+    <section class="como-funciona">
+
+        <h2>Como funciona</h2>
+
+        <div class="passos">
+
+            <div class="passo">
+                <h4>1. Solicitação do exame</h4>
+                <p>O exame é realizado no local com equipamentos modernos.</p>
+            </div>
+
+            <div class="passo">
+                <h4>2. Realização no local</h4>
+                <p>
+                    Exame realizado no local com equipamentos modernos
+                    e profissionais especializados.
+                </p>
+            </div>
+
+            <div class="passo">
+                <h4>3. Laudo digital em até 24h</h4>
+                <p>O tutor acessa os laudos de forma segura pela plataforma.</p>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- SOBRE NÓS -->
+    <section class="sobre-nos">
+
+        <div class="sobre-nos-imagem-box">
+            <div class="sobre-nos-imagem">
+                <button class="botao-profissionais">
+<img src="{% static 'img/PF.jpg' %}" alt="Logo">
+                </button>
+            </div>
+        </div>
+
+        <div class="card-metrica-sobre">
+            <h1>
+                <span class="l2">SOBRE NÓS</span>
+            </h1>
+
+            <p>
+                Nossa equipe é formada por especialistas em diagnóstico por imagem veterinário,
+                com experiência prática em ultrassonografia, radiologia e interpretação de exames complexos,
+                garantindo laudos precisos e suporte clínico ágil.
+            </p>
+        </div>
+
+    </section>
+
+
+    <!-- DEPOIMENTOS -->
+    <section class="depoimentos">
+
+        <h2>Depoimentos</h2>
+
+        <div class="passos">
+
+            <div class="passo">
+                <h4>⭐️⭐️⭐️⭐️⭐️</h4>
+                <p>         
+                "Os laudos entregues em até 24h fizeram total diferença na nossa rotina clínica.
+                Atendimento rápido e interpretação extremamente precisa."
+                     <br><br>
+                            Dra. Mariana Silva <br>
+                            Clínica Veterinária Vida Animal – Porto Alegre
+                </p>
+            </div>
+
+            <div class="passo">
+                <h4>⭐️⭐️⭐️⭐️⭐️</h4>
+                <p>
+                    "Os laudos digitais em até 24h trouxeram mais agilidade para nossa rotina
+                    e segurança nas decisões clínicas."
+                            <br><br>
+                            Dr. Rafael Andrade <br>
+                            Clínica Veterinária PetCare – Canoas
+                              </p>
+            </div>
+
+            <div class="passo">
+                <h4>⭐️⭐️⭐️⭐️⭐️</h4>
+                <p> "Excelente suporte e rapidez na entrega dos laudos.
+                A qualidade técnica dos exames nos dá mais confiança no diagnóstico. 
+                   <br><br>
+                            Dra. Camila Torres <br>
+                            Hospital Veterinário São Francisco – Porto Alegre
+                        </p>
+
+            </div>
+
+        </div>
+
+    </section>
+    </section>
+
+
+    <!-- FOOTER -->
+    <footer>
+
+        <div class="footer-container">
+
+            <div>
+                <p>
+                    Arthur Diagnóstico por Imagem <br>
+                    © 2026 Todos os direitos reservados
+                </p>
+            </div>
+
+            <div class="footer-info">
+
+                <div>
+                    <i class="fa-solid fa-phone"></i>
+                    (51) 9176-1461
+                </div>
+
+
+                <div>
+                    <i class="fa-solid fa-envelope"></i>
+                    oliveira@email.com
+                </div>
+
+                <div>
+                    Instagram:
+                    <button>
+                             <a href="https://www.instagram.com/imagemvet_arthur/"><i class="fa-brands fa-instagram"></i></a> 
+
+                    </button>
+
+
+    
+                </div>
+
+            </div>
+
+        </div>
+
+    </footer>
+
+</body>
+
+</html>
