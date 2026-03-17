@@ -8,6 +8,7 @@ services:
     - "4242:4242"
    volumes:
     - ../dicom-server/orthanc.json:/etc/orthanc/orthanc.json  
+    - orthanc_data:/var/lib/orthanc/db
    environment:
     ORTHANC__HTTP_SERVER__FORWARDED: "true"
    networks:
@@ -83,4 +84,4 @@ networks:
 
 volumes:
   postgres_data:
-
+  orthanc_data:

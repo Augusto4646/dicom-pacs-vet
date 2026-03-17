@@ -1,0 +1,11 @@
+<h2>Acessar exame</h2>
+
+<input id="codigo" placeholder="Digite o código do exame">
+<button onclick="buscarExame()">Buscar exame</button>
+
+<script>
+function buscarExame(){
+    let codigo = document.getElementById("codigo").value;
+    window.location.href = "/portal/" + codigo;
+}
+</script>

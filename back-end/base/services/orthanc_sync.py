@@ -1,11 +1,12 @@
-import requests#type: ignore
+import requests  # type: ignore
 from datetime import datetime
-from base.models import Exame, Paciente, Clinica
+from base.models import Exame, Paciente, Clinica, Usuario
 
 ORTHANC_URL = "http://orthanc:8042"
 
 
 def sincronizar_estudos():
+
     response = requests.get(f"{ORTHANC_URL}/studies")
     estudos = response.json()
 
@@ -16,6 +17,7 @@ def sincronizar_estudos():
         return
 
     for estudo_id in estudos:
+
         detalhes = requests.get(f"{ORTHANC_URL}/studies/{estudo_id}").json()
 
         main_tags = detalhes.get("MainDicomTags", {})
@@ -26,7 +28,7 @@ def sincronizar_estudos():
         if not study_uid:
             continue
 
-        # Se já existe no banco, ignora
+        # evitar duplicado
         if Exame.objects.filter(study_instance_uid=study_uid).exists():
             continue
 
@@ -37,7 +39,20 @@ def sincronizar_estudos():
             clinica=clinica
         )
 
-        # Converter data e hora DICOM
+        nome_ref = main_tags.get("InstitutionName", "")
+        
+        # normaliza o nome do DICOM
+        nome_ref = nome_ref.lower().strip().replace(" ", "-")
+
+        print("Nome vindo do DICOM:", nome_ref)
+
+        veterinario = Usuario.objects.filter(
+            user__username__iexact=nome_ref
+        ).first()
+
+        print("Veterinario encontrado:", veterinario)
+
+        # converter data/hora
         study_date = main_tags.get("StudyDate")
         study_time = main_tags.get("StudyTime")
 
@@ -53,16 +68,17 @@ def sincronizar_estudos():
             pass
 
         Exame.objects.create(
-            clinica=clinica,
             paciente=paciente,
+            usuario_veterinario=veterinario,
             study_instance_uid=study_uid,
             accession_number=main_tags.get("AccessionNumber"),
             study_date=parsed_date,
             study_time=parsed_time,
             descricao=main_tags.get("StudyDescription"),
-            medico_solicitante=main_tags.get("ReferringPhysicianName"),
-            instituicao=main_tags.get("InstitutionName"),
+            medico_solicitante=nome_ref,
             status="recebido"
         )
 
+        print("Nome do DICOM:", nome_ref)
+        print("Usuarios:", Usuario.objects.values_list("user__username", flat=True))
         print(f"Exame criado: {study_uid}")
