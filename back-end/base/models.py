@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 import secrets
 from django.db import models
+import secrets
+import string
 
 class Clinica(models.Model): 
     nome = models.CharField(max_length=100)
@@ -46,16 +48,21 @@ class Usuario(models.Model):
 
     def __str__(self):
         return self.user.username
+
 class Exame(models.Model):
-
+    codigo_acesso=models.CharField(max_length=255, null=True, blank=True)
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE)
+    def save(self, *args, **kwargs):
+        if not self.codigo_acesso:
+            self.codigo_acesso = self._gerar_codigo()
+        super().save(*args, **kwargs)
 
-    codigo_acesso = models.CharField(
-        max_length=6,
-        unique=True,
-        blank=True,
-        null=True
-    )
+    def _gerar_codigo(self):
+        chars = string.ascii_uppercase + string.digits
+        while True:
+            codigo = ''.join(secrets.choice(chars) for _ in range(6))
+            if not Exame.objects.filter(codigo_acesso=codigo).exists():
+                return codigo
 
     usuario_veterinario = models.ForeignKey(
         Usuario,
@@ -74,13 +81,13 @@ class Exame(models.Model):
     )
 
     pdf = models.FileField(upload_to="laudos/", blank=True)
-
+    laudo_html = models.TextField(blank=True, null=True)
     study_instance_uid = models.CharField(max_length=255, unique=True)
 
     accession_number = models.CharField(max_length=100, null=True, blank=True)
     study_date = models.DateField(null=True, blank=True)
     study_time = models.TimeField(null=True, blank=True)
-
+    orthanc_instance_id=models.CharField(max_length=255, null=True, blank=True)
     descricao = models.CharField(max_length=255, null=True, blank=True)
 
     medico_solicitante = models.CharField(max_length=255, null=True, blank=True)

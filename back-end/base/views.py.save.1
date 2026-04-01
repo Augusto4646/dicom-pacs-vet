@@ -10,15 +10,12 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.core.files.base import ContentFile
 from django.template.loader import render_to_string
 from rest_framework import viewsets
+
 from .models import Usuario, Exame
 from .serializers import ExameSerializer
 from .util import gerar_codigo_unico
 from base.services.orthanc_sync import sincronizar_estudos
-import requests
-from django.http import HttpResponse, Http404
-from base.models import Exame
 
-ORTHANC_URL = "http://vizionvet.com.br/orthanc"
 
 # ---------------------------------------------------------------------------
 # Sync
@@ -55,11 +52,7 @@ def novo_exame(request):
 @login_required
 def dashboard(request):
     usuario, created = Usuario.objects.get_or_create(user=request.user)
-
-    exames = Exame.objects.filter(
-        usuario_veterinario=usuario
-    ).order_by('-study_date')
-
+    exames = Exame.objects.filter(usuario_veterinario=usuario)
     return render(request, "dashbord.html", {"exames": exames})
 
 
@@ -122,6 +115,15 @@ def salvar_laudo(request):
         return JsonResponse({"codigo": exame.codigo_acesso})
 
     return JsonResponse({"error": "invalid method"}, status=405)
+
+# ---------------------------------------------------------------------------
+# Mostrar todas as instnaces(id internos) do orthanc
+# ---------------------------------------------------------------------------
+def mostrar_id_iterno(request):
+    dados_string=requests.get("http://vizionvet.com.br/orthanc//instances?expand&requested-tags=PatientName")
+    dados_json=dados_string.json()
+    
+     
 
 
 # ---------------------------------------------------------------------------
@@ -229,38 +231,3 @@ def editar_paciente(request, exame_id):
         return JsonResponse({"ok": True})
 
     return JsonResponse({"error": "invalid method"}, status=405)
-
-
-def baixar_dicom(request, exame_id):
-
-    try:
-        exame = Exame.objects.get(id=exame_id)
-    except Exame.DoesNotExist:
-        raise Http404("Exame não encontrado")
-
-    if not exame.orthanc_instance_id:
-        return HttpResponse("Sem DICOM disponível", status=400)
-
-    # 🔥 chamada ao Orthanc
-    url = f"{ORTHANC_URL}/instances/{exame.orthanc_instance_id}/file"
-
-    response = requests.get(url)
-
-    if response.status_code != 200:
-        return HttpResponse("Erro ao buscar DICOM", status=500)
-
-    # 🔥 retorno do arquivo
-    http_response = HttpResponse(
-        response.content,
-        content_type="application/dicom"
-    )
-
-    http_response["Content-Disposition"] = f'attachment; filename="exame_{exame.id}.dcm"'
-
-    return http_response
-def forcar_codigos(request):
-    exames = Exame.objects.filter(codigo_acesso__isnull=True)
-    for exame in exames:
-        exame.save()  # dispara o save() que gera o código
-    return JsonResponse({"atualizados": exames.count()})
-

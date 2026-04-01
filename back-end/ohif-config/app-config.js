@@ -1,5 +1,7 @@
+window.PUBLIC_URL = '/viewer';
+
 window.config = {
-  routerBasename: '/',
+  routerBasename: '/viewer',
 
   showStudyList: true,
 
@@ -20,17 +22,10 @@ window.config = {
         friendlyName: 'Orthanc',
         name: 'orthanc',
 
-        qidoRoot: 'http://localhost:8082/dicom-web',
-        wadoRoot: 'http://localhost:8082/dicom-web',
-        wadoUriRoot: 'http://localhost:8082/wado',
-
-        supportsFuzzyMatching: true,
-        supportsWildcard: true,
-        imageRendering: 'wadors',
-        thumbnailRendering: 'wadors',
+        qidoRoot: '/orthanc/dicom-web',
+        wadoRoot: '/orthanc/dicom-web',
+        wadoUriRoot: '/orthanc/wado',
       },
     },
   ],
-
-  defaultDataSourceName: 'dicomweb',
 };

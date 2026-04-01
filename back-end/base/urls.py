@@ -1,23 +1,39 @@
-from rest_framework.routers import DefaultRouter
 from django.urls import path
-
-from django.contrib.auth import views as auth_views
-from .views import novo_exame, dashboard, home,login_view,sync_exames,laudo_editor,salvar_laudo,portal_exame
-router = DefaultRouter()
+from . import views
 
 urlpatterns = [
-    path('webhook/novo-exame/', novo_exame),
-    path("laudo/<int:exame_id>/", laudo_editor, name="laudo_editor"),
-    path("", home, name="home"),
-    path("login/", auth_views.LoginView.as_view(template_name="login.html"), name="login"),
-    path("logout/", auth_views.LogoutView.as_view(), name="logout"),
-    path("salvar-laudo/", salvar_laudo),
-    path("portal/", portal_exame, name="portal_exame"),
-    path("portal/<str:codigo>/", portal_exame, name="portal_exame_codigo"),
-    path("dashboard/", dashboard, name="dashboard"),
-    path("sync-exames/", sync_exames, name="sync_exames"),
-    path("r/<str:codigo>/", portal_exame, name="portal_exame_direto"),
 
+    # Autenticação
+    path('', views.home, name='home'),
+    path('login/', views.login_view, name='login'),
+
+    # Dashboard
+    path('dashboard/', views.dashboard, name='dashboard'),
+
+    # Sync Orthanc
+    path('sync/', views.sync_exames, name='sync_exames'),
+
+    # Webhook (Orthanc → Django)
+    path('webhook/novo-exame/', views.novo_exame, name='novo_exame'),
+
+    # Editor de laudo
+    path('laudo/<int:exame_id>/', views.laudo_editor, name='laudo_editor'),
+
+    # Salvar laudo em HTML
+    path('salvar-laudo/', views.salvar_laudo, name='salvar_laudo'),
+
+    # ✅ Salvar PDF (base64 enviado pelo frontend)
+    path('salvar-pdf/<int:exame_id>/', views.salvar_pdf, name='salvar_pdf'),
+
+    # Upload de PDF via formulário
+    path('upload-pdf/', views.upload_laudo_pdf, name='upload_laudo_pdf'),
+
+    # Portal do paciente (sem código = página de busca)
+    path('portal/', views.portal_exame, name='portal'),
+    path('portal/<str:codigo>/', views.portal_exame, name='portal_exame'),
+
+    # Editar paciente
+    path('editar-paciente/<int:exame_id>/', views.editar_paciente, name='editar_paciente'),
+    path('forcar-codigos/', views.forcar_codigos, name='forcar_codigos'),
+    path("baixar/<int:exame_id>/", views.baixar_dicom, name="baixar_dicom"),
 ]
-urlpatterns += router.urls
-

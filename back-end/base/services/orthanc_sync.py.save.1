@@ -9,7 +9,9 @@ def sincronizar_estudos():
     response = requests.get(f"{ORTHANC_URL}/studies")
     estudos = response.json()
 
-    clinica = Clinica.objects.first()
+    clinica = Clinica.objects.first()  
+     dados_string=requests.get(http://vizionvet.com.br/orthanc//instances?expand&requested-tags=PatientName)
+     dados_json=dados_string.json()
 
     if not clinica:
         print("Nenhuma clínica cadastrada.")

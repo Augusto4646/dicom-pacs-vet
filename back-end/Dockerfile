@@ -6,7 +6,7 @@
    
    # Set the working directory
    WORKDIR /app
-   
+   ENV PYTHONPATH=/app
    # Set environment variables to optimize Python
    ENV PYTHONDONTWRITEBYTECODE=1
    ENV PYTHONUNBUFFERED=1 

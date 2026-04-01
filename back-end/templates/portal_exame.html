@@ -8,7 +8,7 @@
 
 body{
 font-family:Arial;
-background:#f5f5f5;
+	background:#f5f5f5;
 margin:0;
 padding:40px;
 }
@@ -64,13 +64,9 @@ border:none;
 }
 
 </style>
-</head>
-
-<body>
-
 <div class="container">
 
-<h1>Resultado do exame</h1>
+<h1>Resultado do exameeee</h1>
 
 <div class="info">
 <strong>Código:</strong> {{ exame.codigo_acesso }} <br>
@@ -83,12 +79,35 @@ border:none;
 {{ exame.laudo_html|safe }}
 </div>
 
-<button onclick="mostrarImagens()">Ver imagens</button>
+<!-- 🔥 BOTÕES -->
+<div style="margin-top:20px; display:flex; gap:10px; flex-wrap:wrap;">
 
-<div id="viewer" class="viewer" style="display:none">
+<button onclick="mostrarImagens()">
+    Ver imagens
+</button>
+
+{% if exame.pdf %}
+<a href="{{ exame.pdf.url }}" target="_blank" style="text-decoration:none;">
+    <span style="
+        display:inline-block;
+        padding:10px 16px;
+        background:#007bff;
+        color:white;
+        border-radius:6px;
+        cursor:pointer;
+    ">
+        Baixar PDF
+    </span>
+</a>
+{% endif %}
+
+</div>
+
+<!-- 🔥 VIEWER -->
+<div id="viewer" class="viewer" style="display:none; margin-top:20px;">
 
 <iframe 
-        src="http://localhost:3000/viewer?StudyInstanceUIDs={{ exame.study_instance_uid }}">
+    src="/viewer/viewer/dicomweb?StudyInstanceUIDs={{ exame.study_instance_uid }}">
 </iframe>
 
 </div>
@@ -96,14 +115,7 @@ border:none;
 </div>
 
 <script>
-
 function mostrarImagens(){
-
-document.getElementById("viewer").style.display="block";
-
+    document.getElementById("viewer").style.display = "block";
 }
-
 </script>
-
-</body>
-</html>

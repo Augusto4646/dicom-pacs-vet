@@ -1,0 +1,36 @@
+window.PUBLIC_URL = '/ohif';
+
+window.config = {
+  routerBasename: '/ohif',
+
+  showStudyList: true,
+
+  extensions: [
+    '@ohif/extension-default',
+    '@ohif/extension-cornerstone',
+  ],
+
+  modes: [
+    '@ohif/mode-longitudinal',
+  ],
+
+  dataSources: [
+    {
+      namespace: '@ohif/extension-default.dataSourcesModule.dicomweb',
+      sourceName: 'dicomweb',
+      configuration: {
+        friendlyName: 'Orthanc',
+        name: 'orthanc',
+        location: 'http://orthanc.vizionvet.com.br/',
+        qidoRoot: 'http://orthanc.vizionvet.com.br/ohif',
+        wadoRoot: 'http://orthanc.vizionvet.com.br/dicom-web',
+        wadoUriRoot: 'http://orthanc.vizionvet.com.br/wado',
+
+        supportsFuzzyMatching: true,
+        supportsWildcard: true,
+        imageRendering: 'wadors',
+        thumbnailRendering: 'wadors',
+      },
+    },
+  ],
+};
