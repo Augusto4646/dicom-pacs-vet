@@ -87,7 +87,7 @@ class Exame(models.Model):
     accession_number = models.CharField(max_length=100, null=True, blank=True)
     study_date = models.DateField(null=True, blank=True)
     study_time = models.TimeField(null=True, blank=True)
-    orthanc_instance_id=models.CharField(max_length=255, null=True, blank=True)
+    orthanc_ids = models.JSONField(default=list, blank=True)
     descricao = models.CharField(max_length=255, null=True, blank=True)
 
     medico_solicitante = models.CharField(max_length=255, null=True, blank=True)

@@ -14,6 +14,27 @@ def sincronizar_estudos():
     if not clinica:
         print("Nenhuma clínica cadastrada.")
         return
+    dados_string = requests.get("http://vizionvet.com.br/orthanc/instances?expand&requested-tags=PatientName")
+    dados_json = dados_string.json()
+
+    lista_orthanc_instances = []
+
+    for i in dados_json:
+        lista_orthanc_instances.append({
+            "nome": i["RequestedTags"]["PatientName"],
+            "numero_instancia": i["MainDicomTags"]["InstanceNumber"],
+            "index": i["IndexInSeries"],
+            "id": i["ID"]
+        })
+
+    lista_final = {}
+
+    for x in lista_orthanc_instances:
+        lista_final[x["nome"]] = []
+
+    for x in lista_orthanc_instances:
+        lista_final[x["nome"]].append(x["id"])
+
 
     for estudo_id in estudos:
 
@@ -75,6 +96,7 @@ def sincronizar_estudos():
             study_time=parsed_time,
             descricao=main_tags.get("StudyDescription"),
             medico_solicitante=nome_ref,
+            orthanc_ids=lista_final.get(patient_name, []),
             status="recebido"
         )
 

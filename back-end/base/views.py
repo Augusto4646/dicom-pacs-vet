@@ -92,14 +92,13 @@ def login_view(request):
 @login_required
 def laudo_editor(request, exame_id):
     exame = get_object_or_404(Exame, id=exame_id)
-
+    exames = Exame.objects.filter(usuario_veterinario=exame.usuario_veterinario)
     # Gera código de acesso apenas se ainda não existir
     if not exame.codigo_acesso:
         exame.codigo_acesso = gerar_codigo_unico()
         exame.save()
 
-    return render(request, "laudo_editor.html", {"exame": exame})
-
+    return render(request, "laudo_editor.html", {"exame": exame, "exames": exames})
 
 # ---------------------------------------------------------------------------
 # Salvar laudo (HTML)

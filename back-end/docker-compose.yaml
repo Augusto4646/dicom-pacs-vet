@@ -58,7 +58,8 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - .:/app   # 👈 AQUI é onde tem que ficar
+      - .:/app
+      - ./media:/app/media
     depends_on:
       - db
     environment:
@@ -76,6 +77,7 @@ services:
       - .env
     networks:
       - orthanc-network
+    user: "1000:1000"
 
 
 networks:
