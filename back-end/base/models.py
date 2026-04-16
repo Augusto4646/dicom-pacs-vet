@@ -63,6 +63,8 @@ class Exame(models.Model):
     orthanc_ids = models.JSONField(default=list, blank=True)
     descricao = models.CharField(max_length=255, null=True, blank=True)
     medico_solicitante = models.CharField(max_length=255, null=True, blank=True)
+    tipo_exame = models.CharField(max_length=255, null=True, blank=True)
+
 
     def __str__(self):
         return self.study_instance_uid
@@ -115,3 +117,48 @@ class Instituicao(models.Model):
 
     def __str__(self):
         return self.nome
+    def recebido(self):
+        total = 0
+        for f in self.financeiros.all():
+            if f.pago:
+                total += f.valor
+        return total
+
+    def a_receber(self):
+        total = 0
+        for f in self.financeiros.all():
+            if not f.pago:
+                total += f.valor
+        return total
+
+
+class Financeiro(models.Model):
+    exame = models.ForeignKey("Exame", on_delete=models.CASCADE)
+
+    instituicao = models.ForeignKey(
+        "Instituicao",
+        on_delete=models.CASCADE,
+        related_name="financeiros"
+    )
+
+    clinica = models.ForeignKey("Clinica", on_delete=models.SET_NULL, null=True, blank=True)
+
+    valor = models.DecimalField(max_digits=10, decimal_places=2)
+    despesa = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    pago = models.BooleanField(default=False)
+
+    data = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return {self.instituicao} - {self.valor}
+
+def lucro_liquido(self):
+    return self.entrada - self.despesa
+
+
+class Clinica(models.Model):
+    nome = models.CharField(max_length=100, blank=True, null=True)
+
+    def __str__(self):
+        return self.nome or "Clinica"
