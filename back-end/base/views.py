@@ -102,9 +102,11 @@ def login_view(request):
 
 @login_required
 def laudo_editor(request, exame_id):
+    usuario, created = Usuario.objects.get_or_create(user=request.user)
     exame = get_object_or_404(Exame, id=exame_id)
-    exames = Exame.objects.filter(usuario_veterinario=exame.usuario_veterinario)
-    # Gera código de acesso apenas se ainda não existir
+    exames = Exame.objects.filter(
+    instituicao__in=usuario.instituicoes.all()
+    )    # Gera código de acesso apenas se ainda não existir
     if not exame.codigo_acesso:
         exame.codigo_acesso = gerar_codigo_unico()
         exame.save()
@@ -350,3 +352,21 @@ def dashboard_visual(request):
         "exames": exames,
         "colunas": colunas
     })
+
+
+# ---------------------------------------------------------------------------
+#EDITAR CABEÇALHO
+# ---------------------------------------------------------------------------
+
+
+def editar_cabecalho(request,exame_id):
+    if request.method == "POST":#post pois modifica
+        novo_nome = request.POST.get("novo_nome")#pega novo nome
+        exame = get_object_or_404(Exame, id=exame_id)#retorna o exame compelto(nome,study_id codigo_acesso tudo daqquele exame daquele cara em espefico)
+
+        for orthanc_id in exame.orthanc_ids:#percore todos orthanc_id daquele exame em espefico
+         response = requests.post(f"{ORTHANC_URL}/instances/{orthanc_id}/modify",json={"Replace": {"PatientName":novo_nome},"Force":True})
+        
+    return JsonResponse({"status": "ok"})
+
+        

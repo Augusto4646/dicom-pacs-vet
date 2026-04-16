@@ -43,5 +43,6 @@ urlpatterns = [
     path('atualizar_status/<int:exame_id>/',views.atualizar_status),
     path('atualizar_status_laudo_editor/<int:exame_id>/', views.atualizar_status_laudo_editor),
     path('dashboard_visual/',views.dashboard_visual,name='dashboard_visual'),
-  
+    path('editar_cabecalho/<int:exame_id>/', views.editar_cabecalho, name='editar_cabecalho'),
+
 ]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

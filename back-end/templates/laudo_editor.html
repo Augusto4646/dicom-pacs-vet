@@ -252,7 +252,7 @@ dialog {
     <div class="viewer" id="viewer">
       <iframe src="/viewer/viewer/dicomweb?StudyInstanceUIDs={{ exame.study_instance_uid }}"></iframe>
     </div>
-
+    {% if request.user.usuario.papel == 'V' %}
 
     <div class="editor">
 
@@ -298,6 +298,7 @@ dialog {
         <button class="btn-img"    onclick="abrirImagem()">🖼 Imagem</button>
         <input type="file" id="fileInput" accept="image/*" style="display:none">
       </div>
+      {% endif %}
 
     </div>
   </div>
