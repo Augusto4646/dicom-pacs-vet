@@ -1,0 +1,91 @@
+<style>
+  .painel {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    margin: 0;
+  }
+  .painel button {
+    background: #1abc9c;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    cursor: pointer;
+    margin-bottom: 16px;
+  }
+  .painel > div[onclick] {
+    padding: 10px 14px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    background: #f9f9f9;
+  }
+  .painel > div[onclick]:hover {
+    background: #eaf6f1;
+    border-color: #1abc9c;
+  }
+  #formCriar input, #formCriar textarea {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+    resize: vertical;
+    height: 50px;
+  }
+  #formCriar button[type="button"] {
+    background: #2ecc71;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+</style>
+
+<div class="painel">
+  <button onclick="document.getElementById('formCriar').style.display='block'">💾 Criar novo</button>
+
+  {% for modelo in modelos %}
+  <div onclick="passar_para_editor(
+      '{{ modelo.nome_modelo }}',
+      '{{ modelo.campo2 }}',
+      '{{ modelo.campo3 }}',
+      '{{ modelo.campo4 }}',
+      '{{ modelo.campo5 }}',
+      '{{ modelo.campo6 }}',
+      '{{ modelo.campo7 }}',
+      '{{ modelo.campo8 }}',
+      '{{ modelo.campo9 }}',
+      '{{ modelo.campo10 }}',
+      '{{ modelo.campo11 }}',
+      '{{ modelo.campo12 }}'
+  )">{{ modelo.nome_modelo }}</div>
+  {% endfor %}
+
+  <div id="formCriar" style="display:none">
+    <form id="formNovoModelo">
+      {% csrf_token %}
+      <input name="nome_modelo" placeholder="Nome do modelo">
+      <textarea name="campo1" placeholder="Campo 1"></textarea>
+      <textarea name="campo2" placeholder="Campo 2"></textarea>
+      <textarea name="campo3" placeholder="Campo 3"></textarea>
+      <textarea name="campo4" placeholder="Campo 4"></textarea>
+      <textarea name="campo5" placeholder="Campo 5"></textarea>
+      <textarea name="campo6" placeholder="Campo 6"></textarea>
+      <textarea name="campo7" placeholder="Campo 7"></textarea>
+      <textarea name="campo8" placeholder="Campo 8"></textarea>
+      <textarea name="campo9" placeholder="Campo 9"></textarea>
+      <textarea name="campo10" placeholder="Campo 10"></textarea>
+      <textarea name="campo11" placeholder="Campo 11"></textarea>
+      <textarea name="campo12" placeholder="Campo 12"></textarea>
+      <button type="button" onclick="salvarModelo()">Salvar</button>
+    </form>
+  </div>
+</div>

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Usuario, Clinica, Exame, Paciente
+from .models import Usuario, Instituicao, Exame, Paciente
 
 
 @admin.register(Usuario)
@@ -11,11 +11,11 @@ class UsuarioAdmin(admin.ModelAdmin):
 
 @admin.register(Exame)
 class ExameAdmin(admin.ModelAdmin):
-    list_display = ['id', 'usuario_veterinario', 'usuario_tutor', 'paciente']
+    list_display = ['id', 'usuario_dicom', 'instituicao', 'paciente']
 
 
-@admin.register(Clinica)
-class ClinicaAdmin(admin.ModelAdmin):
+@admin.register(Instituicao)
+class InstituicaoAdmin(admin.ModelAdmin):
     list_display = ['nome', 'cidade']
     list_filter = ['cidade']
     search_fields = ['nome', 'cidade']
@@ -23,6 +23,6 @@ class ClinicaAdmin(admin.ModelAdmin):
 
 @admin.register(Paciente)
 class PacienteAdmin(admin.ModelAdmin):
-    list_display = ['nome', 'clinica', 'raca', 'idade']
-    list_filter = ['clinica', 'raca']
+    list_display = ['nome', 'raca', 'idade']
+    list_filter = ['raca']
     search_fields = ['nome', 'raca']

@@ -1,0 +1,278 @@
+  {% load static %}
+  <!DOCTYPE html>
+  <html lang="pt-br">
+  <head>
+    <meta charset="UTF-8">
+    <title>VizionVet — Menu</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+      body { font-family: 'DM Sans', sans-serif; }
+      .logo-font { font-family: 'Space Mono', monospace; }
+
+      .sidebar {
+        width: 240px;
+        min-height: 100vh;
+        background: #0f1117;
+        border-right: 1px solid rgba(255,255,255,0.06);
+        display: flex;
+        flex-direction: column;
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 20px;
+        border-radius: 8px;
+        margin: 2px 10px;
+        color: #9ca3af;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-decoration: none;
+      }
+      .nav-item:hover { background: rgba(255,255,255,0.06); color: #f3f4f6; }
+      .nav-item.active { background: rgba(99,102,241,0.15); color: #818cf8; }
+      .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+
+      .stat-card {
+        background: #1a1d27;
+        border: 1px solid rgba(255,255,255,0.07);
+        border-radius: 14px;
+        padding: 20px 24px;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      }
+
+      .main-bg { background: #13151f; min-height: 100vh; }
+
+      .chart-card {
+        background: #1a1d27;
+        border: 1px solid rgba(255,255,255,0.07);
+        border-radius: 14px;
+        padding: 24px;
+      }
+
+      .log-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+      }
+      .log-item:last-child { border-bottom: none; }
+
+      .log-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        flex-shrink: 0;
+      }
+
+      .badge-aguardando { background: rgba(251,191,36,0.15); color: #fbbf24; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+      .badge-urgente    { background: rgba(239,68,68,0.15);  color: #f87171; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+      .badge-laudado    { background: rgba(52,211,153,0.15); color: #34d399; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+
+      .accent-indigo { color: #818cf8; }
+      .accent-amber  { color: #fbbf24; }
+      .accent-green  { color: #34d399; }
+      .accent-red    { color: #f87171; }
+    </style>
+  </head>
+
+  <body class="main-bg text-gray-100">
+  <div class="flex">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar fixed top-0 left-0 z-10">
+      <!-- Logo -->
+      <div class="px-6 py-5 border-b border-white/5">
+        <div class="logo-font text-white text-lg font-bold">VizionVet</div>
+        <div class="text-gray-500 text-xs mt-0.5">Radiologia Veterinária</div>
+      </div>
+
+      <!-- Nav -->
+      <nav class="flex-1 py-4">
+        <div class="px-4 mb-2 text-xs text-gray-600 uppercase tracking-widest font-semibold">Principal</div>
+
+        <a href="#" class="nav-item active">
+          <span class="icon">⊞</span> Dashboard
+        </a>
+        <a href="{% url 'dashbord' %}" class="nav-item">
+          <span class="icon">📋</span> Laudos
+        </a>
+        <a href="{% url 'sync_exames' %}" class="nav-item">
+          <span class="icon">🔄</span> Financeiro
+        </a>
+
+        <div class="px-4 mt-4 mb-2 text-xs text-gray-600 uppercase tracking-widest font-semibold">Sistema</div>
+
+        <a href="#" class="nav-item">
+          <span class="icon">🐾</span> Pacientes
+        </a>
+        <a href="#" class="nav-item">
+          <span class="icon">⚙️</span> Configurações
+        </a>
+      </nav>
+
+      <!-- User -->
+      <div class="px-4 py-4 border-t border-white/5">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-sm">👤</div>
+          <div>
+            <div class="text-sm font-medium text-gray-200">{{ request.user.username }}</div>
+            <a href="#" class="text-xs text-gray-500 hover:text-gray-300">Sair</a>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="ml-[240px] flex-1 p-8">
+
+      <!-- Header -->
+      <div class="mb-8">
+        <h1 class="text-2xl font-semibold text-white">Dashboard</h1>
+        <p class="text-gray-500 text-sm mt-1">Visão geral do sistema de radiologia veterinária</p>
+      </div>
+
+      <!-- STAT CARDS -->
+      <div class="grid grid-cols-4 gap-4 mb-8">
+
+        <div class="stat-card">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-gray-400 text-sm">Aguardando</span>
+            <div class="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center text-lg">⏳</div>
+          </div>
+          <div class="text-3xl font-bold text-white">{{ total_aguardando }}</div>
+          <div class="text-xs text-amber-400 mt-1">exames na fila</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-gray-400 text-sm">Urgente</span>
+            <div class="w-9 h-9 rounded-xl bg-red-500/10 flex items-center justify-center text-lg">🚨</div>
+          </div>
+          <div class="text-3xl font-bold text-white">{{ total_urgente }}</div>
+          <div class="text-xs text-red-400 mt-1">requer atenção</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-gray-400 text-sm">Laudados</span>
+            <div class="w-9 h-9 rounded-xl bg-green-500/10 flex items-center justify-center text-lg">✅</div>
+          </div>
+          <div class="text-3xl font-bold text-white">{{ total_laudado }}</div>
+          <div class="text-xs text-green-400 mt-1">concluídos</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-gray-400 text-sm">Total</span>
+            <div class="w-9 h-9 rounded-xl bg-indigo-500/10 flex items-center justify-center text-lg">📁</div>
+          </div>
+          <div class="text-3xl font-bold text-white">{{ total_exames }}</div>
+          <div class="text-xs text-indigo-400 mt-1">exames no sistema</div>
+        </div>
+
+      </div>
+
+      <!-- CHART + LOGS -->
+      <div class="grid grid-cols-5 gap-6">
+
+        <!-- GRÁFICO -->
+        <div class="col-span-3 chart-card">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h2 class="text-base font-semibold text-white">Status dos Exames</h2>
+              <p class="text-gray-500 text-xs mt-0.5">Distribuição atual</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-8">
+            <div style="width: 220px; height: 220px; flex-shrink:0;">
+              <canvas id="grafico"></canvas>
+            </div>
+            <div class="flex flex-col gap-3">
+              <div class="flex items-center gap-3">
+                <div class="w-3 h-3 rounded-full bg-amber-400"></div>
+                <span class="text-sm text-gray-300">Aguardando</span>
+                <span class="ml-auto text-sm font-bold text-white">{{ total_aguardando }}</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                <span class="text-sm text-gray-300">Urgente</span>
+                <span class="ml-auto text-sm font-bold text-white">{{ total_urgente }}</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="w-3 h-3 rounded-full bg-green-400"></div>
+                <span class="text-sm text-gray-300">Laudado</span>
+                <span class="ml-auto text-sm font-bold text-white">{{ total_laudado }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LOGS -->
+        <div class="col-span-2 chart-card">
+          <div class="mb-5">
+            <h2 class="text-base font-semibold text-white">Exames Recentes</h2>
+            <p class="text-gray-500 text-xs mt-0.5">Últimas entradas</p>
+          </div>
+          <div>
+            {% for exame in exames_recentes %}
+            <div class="log-item">
+              <div class="log-icon {% if exame.status == 'Urgente' %}bg-red-500/10{% elif exame.status == 'Laudado' %}bg-green-500/10{% else %}bg-amber-500/10{% endif %}">
+                {% if exame.status == 'Urgente' %}🚨{% elif exame.status == 'Laudado' %}✅{% else %}⏳{% endif %}
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-gray-200 truncate">{{ exame.paciente.nome }}</div>
+                <div class="text-xs text-gray-500">{{ exame.study_date }}</div>
+              </div>
+              <span class="{% if exame.status == 'Urgente' %}badge-urgente{% elif exame.status == 'Laudado' %}badge-laudado{% else %}badge-aguardando{% endif %}">
+                {{ exame.status }}
+              </span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+  const ctx = document.getElementById('grafico').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Aguardando', 'Urgente', 'Laudado'],
+      datasets: [{
+        data: [{{ total_aguardando }}, {{ total_urgente }}, {{ total_laudado }}],
+        backgroundColor: ['rgba(251,191,36,0.8)', 'rgba(248,113,113,0.8)', 'rgba(52,211,153,0.8)'],
+        borderColor: ['#fbbf24', '#f87171', '#34d399'],
+        borderWidth: 2,
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      cutout: '70%',
+      plugins: { legend: { display: false } },
+      responsive: true,
+      maintainAspectRatio: true
+    }
+  });
+  </script>
+  </body>
+  </html>

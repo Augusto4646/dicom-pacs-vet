@@ -1,20 +1,28 @@
-import requests  # type: ignore
+import requests
 from datetime import datetime
-from base.models import Exame, Paciente, Clinica, Usuario
-	
+from base.models import Exame, Paciente, Instituicao, Usuario
+import re
+import unicodedata
+
 ORTHANC_URL = "http://vizionvet.com.br/orthanc"
+
+
+def normalizar_nome(texto):
+    texto = texto.lower().strip()
+    texto = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode("ascii")
+    texto = re.sub(r"[^a-z0-9]+", "-", texto)
+    texto = re.sub(r"-+", "-", texto)
+    return texto.strip("-")
+
 
 def sincronizar_estudos():
 
     response = requests.get(f"{ORTHANC_URL}/studies")
     estudos = response.json()
 
-    clinica = Clinica.objects.first()
-
-    if not clinica:
-        print("Nenhuma clínica cadastrada.")
-        return
-    dados_string = requests.get("http://vizionvet.com.br/orthanc/instances?expand&requested-tags=PatientName")
+    dados_string = requests.get(
+        f"{ORTHANC_URL}/instances?expand&requested-tags=PatientName"
+    )
     dados_json = dados_string.json()
 
     lista_orthanc_instances = []
@@ -22,24 +30,18 @@ def sincronizar_estudos():
     for i in dados_json:
         lista_orthanc_instances.append({
             "nome": i["RequestedTags"]["PatientName"],
-            "numero_instancia": i["MainDicomTags"]["InstanceNumber"],
-            "index": i["IndexInSeries"],
             "id": i["ID"]
         })
 
     lista_final = {}
 
     for x in lista_orthanc_instances:
-        lista_final[x["nome"]] = []
-
-    for x in lista_orthanc_instances:
-        lista_final[x["nome"]].append(x["id"])
-
+        lista_final.setdefault(x["nome"], []).append(x["id"])
 
     for estudo_id in estudos:
 
         detalhes = requests.get(f"{ORTHANC_URL}/studies/{estudo_id}").json()
-
+        
         main_tags = detalhes.get("MainDicomTags", {})
         patient_tags = detalhes.get("PatientMainDicomTags", {})
 
@@ -48,23 +50,18 @@ def sincronizar_estudos():
         if not study_uid:
             continue
 
-        # evitar duplicado
         if Exame.objects.filter(study_instance_uid=study_uid).exists():
             continue
 
         patient_name = patient_tags.get("PatientName", "Desconhecido")
 
-        paciente, _ = Paciente.objects.get_or_create(
-            nome=patient_name,
-            clinica=clinica
-        )
+        paciente, _ = Paciente.objects.get_or_create(nome=patient_name)
 
-        nome_ref = main_tags.get("InstitutionName", "")
-        
-        # normaliza o nome do DICOM
-        nome_ref = nome_ref.lower().strip().replace(" ", "-")
+        nome_bruto = main_tags.get("InstitutionName", "")
+        nome_ref = normalizar_nome(nome_bruto)
 
-        print("Nome vindo do DICOM:", nome_ref)
+        print("DICOM bruto:", nome_bruto)
+        print("Normalizado:", nome_ref)
 
         veterinario = Usuario.objects.filter(
             user__username__iexact=nome_ref
@@ -72,7 +69,12 @@ def sincronizar_estudos():
 
         print("Veterinario encontrado:", veterinario)
 
-        # converter data/hora
+        instituicao = Instituicao.objects.filter(
+            membros_insituticao=veterinario
+        ).first()
+
+        print("Instituicao encontrada:", instituicao)
+
         study_date = main_tags.get("StudyDate")
         study_time = main_tags.get("StudyTime")
 
@@ -87,9 +89,9 @@ def sincronizar_estudos():
         except:
             pass
 
-        Exame.objects.create(
+        exame_criado = Exame.objects.create(
             paciente=paciente,
-            usuario_veterinario=veterinario,
+            usuario_dicom=veterinario,
             study_instance_uid=study_uid,
             accession_number=main_tags.get("AccessionNumber"),
             study_date=parsed_date,
@@ -97,9 +99,12 @@ def sincronizar_estudos():
             descricao=main_tags.get("StudyDescription"),
             medico_solicitante=nome_ref,
             orthanc_ids=lista_final.get(patient_name, []),
-            status="recebido"
+            status="Aguardando",
+            instituicao=instituicao
         )
 
-        print("Nome do DICOM:", nome_ref)
-        print("Usuarios:", Usuario.objects.values_list("user__username", flat=True))
+        if instituicao:
+            instituicao.exames.add(exame_criado)
+
+        print("Usuarios:", list(Usuario.objects.values_list("user__username", flat=True)))
         print(f"Exame criado: {study_uid}")

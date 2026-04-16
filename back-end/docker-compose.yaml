@@ -37,7 +37,8 @@ services:
     networks:
       - orthanc-network
 
-  db:
+  db:          
+  postgres-db
     image: postgres:17
     container_name: postgres-db
     environment:

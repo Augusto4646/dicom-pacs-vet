@@ -1,332 +1,376 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Laudo</title>
+  <!DOCTYPE html>
+  <html>
+  <head>
+  <meta charset="UTF-8">
+  <title>Laudo</title>
 
-<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-<style>
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://unpkg.com/split.js/dist/split.min.js"></script>
+  <style>
 
-body {
-  margin: 0;
-  font-family: Arial;
-  height: 100vh;
-  overflow: auto;
-  background: #f5f5f5;
-}
+  body {
+    margin: 0;
+    font-family: Arial;
+    height: 100vh;
+    overflow: auto;
+    background: #f5f5f5;
+  }
 
-.container {
-  display: flex;
-  height: 100vh;
-}
+  .container {
+    display: flex;
+    height: 100vh;
+    overflow: hidden; /* adicione isso */
+  }
 
 .viewer {
+  /* remova flex: 1 */
   width: 50%;
-  background: black;
+  min-width: 0;
+  overflow: hidden;
 }
 
-.viewer iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-}
+  .viewer iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
 
-.resizer {
-  width: 5px;
-  background: #cfcfcf;
-  cursor: col-resize;
-}
+  .gutter {
+    background-color: #cfcfcf;
+    cursor: col-resize;
+  }
+
+  .gutter:hover {
+    background-color: #999;
+  }
+
 
 .editor {
-    flex: 1;
-  min-width: 0; /* ISSO AQUI RESOLVE METADE DOS BUGS DO UNIVERSO */
-
-}
-
-.title {
-  font-size: 20px;
-  font-weight: bold;
-  margin-bottom: 10px;
-}
-
-.controls {
+  width: 50%;
+  min-width: 0;
   display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.controls select {
-  padding: 6px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-}
-
-.statusbar {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  color: #555;
-  margin-bottom: 10px;
-}
-
-#editor {
-    flex: 1;
-  background: white;
-  overflow-x: hidden;
-
-}
-
-.ql-container {
-  height: 100%;
-}
-
-.ql-editor {
-  font-size: 16px;
-  white-space: pre-wrap;
-  max-width: 800px;
-  margin: auto;
-  word-break: break-word;
-  overflow-wrap: break-word;
-}
-
-.ql-editor img {
-  max-width: 100%;
-  height: auto;
-  margin: 10px 0;
-  border-radius: 6px;
-}
-.dropdown {
-  position: relative;
-  display: inline-block;
-}
-
-.dropdown-content {
-  display: none;
-  position: absolute;
-  background-color: #fff;
-  min-width: 200px;
-  box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
-  z-index: 1;
-}
-
-.dropdown-content a {
-  color: black;
+  flex-direction: column;
+  height: 100vh;
   padding: 10px;
-  text-decoration: none;
-  display: block;
-}
-
-.dropdown-content a:hover {
-  background-color: #ddd;
-}
-
-.dropdown-content.open {
-  display: block;
-}
-
-
-button {
-  padding: 8px 12px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  color: white;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-button:hover { opacity: 0.9; }
-
-.btn-salvar  { background: #2ecc71; }
-.btn-pdf     { background: #e74c3c; }
-.btn-html    { background: #9b59b6; }
-.btn-texto   { background: #f39c12; }
-.btn-modelo  { background: #1abc9c; }
-.btn-limpar  { background: #7f8c8d; }
-.btn-img     { background: #34495e; }
-
-.actions {
-  margin-top: 10px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-/* MODAL */
-dialog {
-  border: none;
-  border-radius: 10px;
-  padding: 24px;
-  min-width: 340px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-  font-family: Arial;
-}
-
-dialog::backdrop {
-  background: rgba(0,0,0,0.4);
-}
-
-dialog h3 {
-  margin: 0 0 16px;
-  font-size: 18px;
-}
-
-.modal-row {
-  margin-bottom: 12px;
-}
-
-.modal-row label {
-  font-size: 13px;
-  color: #555;
-  display: block;
-  margin-bottom: 4px;
-}
-
-.modal-row input {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 14px;
   box-sizing: border-box;
+  overflow: hidden;
+  
 }
 
-.modal-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 16px;
-}
 
-.btn-copiar { background: #3498db; }
-.btn-fechar { background: #7f8c8d; }
-
-</style>
-</head>
-
-<body>
-
-<!-- MODAL -->
-<dialog id="modalSalvo">
-  <h3>✅ Laudo salvo!</h3>
-  <div class="modal-row">
-    <label>Código:</label>
-    <input id="modalCodigo" type="text" readonly>
-  </div>
-  <div class="modal-row">
-    <label>Link para o paciente:</label>
-    <input id="modalLink" type="text" readonly>
-  </div>
-  <div class="modal-actions">
-    <button class="btn-copiar" onclick="copiarLink()">📋 Copiar link</button>
-    <button class="btn-fechar" onclick="document.getElementById('modalSalvo').close()">Fechar</button>
-  </div>
-</dialog>
-<div class="container">
-
-  <div class="viewer" id="viewer">
-    <iframe src="/viewer/viewer/dicomweb?StudyInstanceUIDs={{ exame.study_instance_uid }}"></iframe>
-  </div>
-
-  <div class="resizer" id="resizer"></div>
-
-  <div class="editor">
-
-    <div class="title">Laudo Radiográfico</div>
-
-    <div class="controls">
-      <label>Tamanho:</label>
-      <select id="fontSize">
-        <option value="12px">12</option>
-        <option value="14px">14</option>
-        <option value="16px" selected>16</option>
-        <option value="18px">18</option>
-        <option value="24px">24</option>
-        <option value="32px">32</option>
-      </select>
-      <button onclick="setSize()">🔠 Aplicar</button>
-      <button class="btn-pdf" onclick="gerarPDF()">📄 PDF</button>
-<div>Código: {{ exame.codigo_acesso }}</div>    
-<div class="dropdown" onclick="this.querySelector('.dropdown-content').classList.toggle('open')">
-<button class="dropbtn btn-copiar">Paciente atual: {{exame.paciente.nome}}</button>
-<div class="dropdown-content">
-  {% for e in exames %}
-    <a href="{% url 'laudo_editor' e.id %}">{{ e.paciente.nome }}</a>
-  {% endfor %}
-</div>
-
-</div>
-</div>
-
-    <div class="statusbar">
-      <div id="status">Não salvo</div>
-      <div id="contador">0 palavras</div>
-    </div>
-
-    <div id="editor"></div>
-
-    <div class="actions">
-      <button class="btn-salvar" onclick="salvar()">💾 Salvar</button>
-      <button class="btn-html"   onclick="copiarHTML()">📋 HTML</button>
-      <button class="btn-texto"  onclick="copiarTexto()">📝 Texto</button>
-      <button class="btn-modelo" onclick="modelo()">📑 Modelo</button>
-      <button class="btn-limpar" onclick="limpar()">🧹 Limpar</button>
-      <button class="btn-img"    onclick="abrirImagem()">🖼 Imagem</button>
-      <input type="file" id="fileInput" accept="image/*" style="display:none">
-    </div>
-
-  </div>
-</div>
-
-<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/quill-image-resize-module@3.0.0/image-resize.min.js"></script>
-
-<script>
-
-var quill = new Quill('#editor', {
-  theme: 'snow',
-  modules: {
-    toolbar: [
-      ['bold', 'italic', 'underline'],
-      [{ list: 'ordered' }, { list: 'bullet' }],
-      [{ align: [] }],
-      ['clean']
-    ],
-    imageResize: {
-      modules: ['Resize', 'DisplaySize', 'Toolbar']
-    }
+  .title {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 10px;
   }
-});
 
-quill.on('text-change', function () {
-  let texto = quill.getText();
-  let palavras = texto.trim().split(/\s+/).filter(Boolean);
-  document.getElementById('contador').innerText = palavras.length + " palavras";
-  document.getElementById('status').innerText = "Editando...";
-});
+  .controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
 
-function setSize() {
-  let size = document.getElementById('fontSize').value;
-  quill.format('size', size);
+  .controls select {
+    padding: 6px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+  }
+
+  .statusbar {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 10px;
+  }
+
+  #editor {
+      flex: 1;
+    background: white;
+    overflow-x: hidden;
+
+  }
+
+  .ql-container {
+    height: 100%;
+  }
+
+  .ql-editor {
+    font-size: 16px;
+    white-space: pre-wrap;
+    max-width: 800px;
+    margin: auto;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .ql-editor img {
+    max-width: 100%;
+    height: auto;
+    margin: 10px 0;
+    border-radius: 6px;
+  }
+  .dropdown {
+    position: relative;
+    display: inline-block;
+  }
+
+  .dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    min-width: 200px;
+    box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+    z-index: 1;
+  }
+
+  .dropdown-content a {
+    color: black;
+    padding: 10px;
+    text-decoration: none;
+    display: block;
+  }
+
+  .dropdown-content a:hover {
+    background-color: #ddd;
+  }
+
+  .dropdown-content.open {
+    display: block;
+  }
+
+
+  button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  button:hover { opacity: 0.9; }
+
+  .btn-salvar  { background: #2ecc71; }
+  .btn-pdf     { background: #e74c3c; }
+  .btn-html    { background: #9b59b6; }
+  .btn-texto   { background: #f39c12; }
+  .btn-modelo  { background: #1abc9c; }
+  .btn-limpar  { background: #7f8c8d; }
+  .btn-img     { background: #34495e; }
+
+  .actions {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* MODAL */
+dialog {
+    border: none;
+    border-radius: 10px;
+    padding: 24px;
+    min-width: 540px;
+    width: 90vw;
+    max-height: 90vh;
+    overflow-y: scroll ;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    font-family: Arial;
 }
 
-function gerarPDF() {
-  const element = document.querySelector('#editor .ql-editor');
-  const opt = {
-    margin:      10,
-    filename:    'laudo.pdf',
-    image:       { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
+  dialog::backdrop {
+    background: rgba(0,0,0,0.4);
+  }
 
-  html2pdf().set(opt).from(element).outputPdf('blob').then(function (pdfBlob) {
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(pdfBlob);
+  dialog h3 {
+    margin: 0 0 16px;
+    font-size: 18px;
+  }
+
+  .modal-row {
+    margin-bottom: 12px;
+  }
+
+  .modal-row label {
+    font-size: 13px;
+    color: #555;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .modal-row input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .btn-copiar { background: #3498db; }
+  .btn-fechar { background: #7f8c8d; }
+
+  </style>
+  </head>
+
+  <body>
+
+  <!-- MODAL -->
+  <dialog id="modalSalvo">
+    <h3>✅ Laudo salvo!</h3>
+    <div class="modal-row">
+      <label>Código:</label>
+      <input id="modalCodigo" type="text" readonly>
+    </div>
+    <div class="modal-row">
+      <label>Link para o paciente:</label>
+      <input id="modalLink" type="text" readonly>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-copiar" onclick="copiarLink()">📋 Copiar link</button>
+      <button class="btn-fechar" onclick="document.getElementById('modalSalvo').close()">Fechar</button>
+    </div>
+  </dialog>
+  <dialog id="dialogModelos"></dialog>
+  <div class="container">
+
+    <div class="viewer" id="viewer">
+      <iframe src="/viewer/viewer/dicomweb?StudyInstanceUIDs={{ exame.study_instance_uid }}"></iframe>
+    </div>
+
+
+    <div class="editor">
+
+      <div class="title">Laudo Radiográfico</div>
+
+      <div class="controls">
+        <label>Tamanho:</label>
+        <select id="fontSize">
+          <option value="12px">12</option>
+          <option value="14px">14</option>
+          <option value="16px" selected>16</option>
+          <option value="18px">18</option>
+          <option value="24px">24</option>
+          <option value="32px">32</option>
+        </select>
+        <button onclick="setSize()">🔠 Aplicar</button>
+        <button class="btn-pdf" onclick="gerarPDF()">📄 PDF</button>
+  <div>Código: {{ exame.codigo_acesso }}</div>    
+  <div class="dropdown" onclick="this.querySelector('.dropdown-content').classList.toggle('open')">
+  <button class="dropbtn btn-copiar">Paciente atual: {{exame.paciente.nome}}</button>
+  <div class="dropdown-content">
+    {% for e in exames %}
+      <a href="{% url 'laudo_editor' e.id %}">{{ e.paciente.nome }}</a>
+    {% endfor %}
+  </div>
+
+  </div>
+  </div>
+
+      <div class="statusbar">
+        <div id="status">Não salvo</div>
+        <div id="contador">0 palavras</div>
+      </div>
+
+      <div id="editor"></div>
+
+      <div class="actions">
+        <button class="btn-salvar" onclick="salvar()">💾 Salvar</button>
+        <button class="btn-html"   onclick="copiarHTML()">📋 HTML</button>
+        <button class="btn-texto"  onclick="copiarTexto()">📝 Texto</button>
+        <button class="btn-modelo" onclick="modelo()">📑 Modelo</button>
+        <button class="btn-limpar" onclick="limpar()">🧹 Limpar</button>
+        <button class="btn-img"    onclick="abrirImagem()">🖼 Imagem</button>
+        <input type="file" id="fileInput" accept="image/*" style="display:none">
+      </div>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/quill-image-resize-module@3.0.0/image-resize.min.js"></script>
+
+  <script>
+
+  var quill = new Quill('#editor', {
+    theme: 'snow',
+    modules: {
+      toolbar: [
+        ['bold', 'italic', 'underline'],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        [{ align: [] }],
+        ['clean']
+      ],
+      imageResize: {
+        modules: ['Resize', 'DisplaySize', 'Toolbar']
+      }
+    }
+  });
+
+  quill.on('text-change', function () {
+    let texto = quill.getText();
+    let palavras = texto.trim().split(/\s+/).filter(Boolean);
+    document.getElementById('contador').innerText = palavras.length + " palavras";
+    document.getElementById('status').innerText = "Editando...";
+  });
+
+  function setSize() {
+    let size = document.getElementById('fontSize').value;
+    quill.format('size', size);
+  }
+
+
+async function gerarPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc       = new jsPDF('p', 'mm', 'a4');
+    const pageW     = doc.internal.pageSize.getWidth();
+    const pageH     = doc.internal.pageSize.getHeight();
+    const margin    = 10;
+    const usableW   = pageW - margin * 2;
+    let   currentY  = margin;
+
+    const element = document.querySelector('#editor .ql-editor');
+    const canvas  = await html2canvas(element, { scale: 2, useCORS: true });
+    const laudoImg    = canvas.toDataURL('image/jpeg', 0.98);
+    const laudoHeight = (canvas.height * usableW) / canvas.width;
+
+    doc.addImage(laudoImg, 'JPEG', margin, currentY, usableW, laudoHeight);
+    currentY += laudoHeight + 5;
+
+    const res  = await fetch('/dicom-para-imagens/{{ exame.id }}/');
+    const data = await res.json();
+
+    for (const imgSrc of data.imagens) {
+      const imgProps = doc.getImageProperties(imgSrc);
+      const imgH     = (imgProps.height * usableW) / imgProps.width;
+
+      if (currentY + imgH > pageH - margin) {
+        doc.addPage();
+        currentY = margin;
+      }
+
+      doc.addImage(imgSrc, 'PNG', margin, currentY, usableW, imgH);
+      currentY += imgH + 5;
+    }
+
+    const pdfBlob = doc.output('blob');
+    const link    = document.createElement('a');
+    link.href     = URL.createObjectURL(pdfBlob);
     link.download = 'laudo.pdf';
     link.click();
 
@@ -341,175 +385,196 @@ function gerarPDF() {
         },
         body: 'pdf_base64=' + encodeURIComponent(reader.result)
       })
-      .then(res => res.json())
       .then(() => { document.getElementById('status').innerText = "PDF salvo ✅"; })
       .catch(() => { document.getElementById('status').innerText = "Erro ao salvar PDF"; });
     };
-  });
+
+    await fetch('/atualizar_status_laudo_editor/{{ exame.id }}/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({ status: 'Laudado' })
+    });
+  }
+  function salvarModelo(){
+    const form = document.getElementById('formNovoModelo');
+    const data = new FormData(form);
+    fetch('/criar_modelos/', {
+        method: 'POST',
+        body: data
+    })
+    .then(() => {
+        return fetch('/listar_modelos/');
+    })
+    .then(r => r.text())
+    .then(html => {
+        document.getElementById('dialogModelos').innerHTML = html;
+    })
 }
 
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== '') {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.startsWith(name + '=')) {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-        break;
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.startsWith(name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
       }
     }
+    return cookieValue;
   }
-  return cookieValue;
-}
 
-document.getElementById('fileInput').onchange = function () {
-  let file = this.files[0];
-  let reader = new FileReader();
-  reader.onload = function (e) {
-    let range = quill.getSelection(true);
-    quill.insertEmbed(range.index, 'image', e.target.result);
-  };
-  reader.readAsDataURL(file);
-};
-
-function abrirImagem() { document.getElementById('fileInput').click(); }
-
-quill.root.addEventListener('dragover', e => e.preventDefault());
-
-quill.root.addEventListener('drop', function (e) {
-  e.preventDefault();
-  let file = e.dataTransfer.files[0];
-  if (file && file.type.startsWith('image')) {
+  document.getElementById('fileInput').onchange = function () {
+    let file = this.files[0];
     let reader = new FileReader();
-    reader.onload = function (event) {
+    reader.onload = function (e) {
       let range = quill.getSelection(true);
-      quill.insertEmbed(range.index, 'image', event.target.result);
+      quill.insertEmbed(range.index, 'image', e.target.result);
     };
     reader.readAsDataURL(file);
+  };
+const iframe = document.querySelector('.viewer iframe');
+
+Split(['#viewer', '.editor'], {
+  sizes: [50, 50],
+  minSize: 300,
+  gutterSize: 8,
+
+  onDragStart: () => {
+    iframe.style.pointerEvents = 'none';
+  },
+
+  onDragEnd: () => {
+    iframe.style.pointerEvents = 'auto';
   }
 });
 
-document.addEventListener('paste', function (e) {
-  let items = e.clipboardData.items;
-  for (let i = 0; i < items.length; i++) {
-    if (items[i].type.indexOf('image') !== -1) {
-      e.preventDefault();
-      let file = items[i].getAsFile();
-      let reader = new FileReader();
-      reader.onload = function (event) {
-        let range = quill.getSelection(true);
-        quill.insertEmbed(range.index, 'image', event.target.result);
-      };
-      reader.readAsDataURL(file);
+
+  document.addEventListener('paste', function (e) {
+    let items = e.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        e.preventDefault();
+        let file = items[i].getAsFile();
+        let reader = new FileReader();
+        reader.onload = function (event) {
+          let range = quill.getSelection(true);
+          quill.insertEmbed(range.index, 'image', event.target.result);
+        };
+        reader.readAsDataURL(file);
+      }
     }
+  });
+
+  function copiarHTML()  { navigator.clipboard.writeText(quill.root.innerHTML); }
+  function copiarTexto() { navigator.clipboard.writeText(quill.getText()); }
+
+  function limpar() {
+    quill.setText('');
+    document.getElementById('status').innerText = 'Não salvo';
   }
-});
-
-function copiarHTML()  { navigator.clipboard.writeText(quill.root.innerHTML); }
-function copiarTexto() { navigator.clipboard.writeText(quill.getText()); }
-
-function limpar() {
-  quill.setText('');
-  document.getElementById('status').innerText = 'Não salvo';
-}
-
 function modelo() {
-  quill.root.innerHTML = `
-    <h2>Laudo Radiográfico</h2>
-    <p><strong>Achados:</strong></p>
-    <p>- Estruturas ósseas preservadas.</p>
-    <p>- Não há sinais de fratura.</p>
-    <p>- Tecidos moles sem alterações evidentes.</p>
-    <p><strong>Conclusão:</strong></p>
-    <p>Exame dentro da normalidade.</p>
-  `;
-}
-
-function salvar() {
-  let html = quill.root.innerHTML;
-
-  fetch('/salvar-laudo/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': getCookie('csrftoken')
-    },
-    body: JSON.stringify({
-      laudoHTML: html,
-      studyInstanceUid: '{{ exame.study_instance_uid }}'
+    fetch('/listar_modelos/')
+    .then(r => r.text())
+    .then(html => {
+        document.getElementById('dialogModelos').innerHTML = html;
+        document.getElementById('dialogModelos').showModal();
     })
-  })
-  .then(r => r.json())
-  .then(data => {
-    document.getElementById('status').innerText = "Salvo ✅";
-    const link = window.location.origin + "/portal/" + data.codigo;
-    document.getElementById('modalCodigo').value = data.codigo;
-    document.getElementById('modalLink').value = link;
-    document.getElementById('modalSalvo').showModal();
-  })
-  .catch(() => {
-    document.getElementById('status').innerText = "Erro ao salvar";
-  });
 }
-
-function copiarLink() {
-  const input = document.getElementById('modalLink');
-  input.select();
-  navigator.clipboard.writeText(input.value);
-  const btn = document.querySelector('.btn-copiar');
-  btn.innerText = '✅ Copiado!';
-  setTimeout(() => btn.innerText = '📋 Copiar link', 2000);
+function passar_para_editor(nome_modelo,campo2,campo3,campo4,campo5,campo6,campo7,campo8,campo9,campo10,campo11,campo12){
+    quill.root.innerHTML = '<p><strong>Paciente: {{ exame.paciente.nome }}</strong></p>' 
+        + '<p>' + campo2 + '</p>'
+        + '<p>' + campo3 + '</p>'
+        + '<p>' + campo4 + '</p>'
+        + '<p>' + campo5 + '</p>'
+        + '<p>' + campo6 + '</p>'
+        + '<p>' + campo7 + '</p>'
+        + '<p>' + campo8 + '</p>'
+        + '<p>' + campo9 + '</p>'
+        + '<p>' + campo10 + '</p>'
+        + '<p>' + campo11 + '</p>'
+        + '<p>' + campo12 + '</p>';
+    document.getElementById('dialogModelos').close();
 }
+  function salvar() {
+    let html = quill.root.innerHTML;
 
-// troca o autosave por isso
-setInterval(function () {
-  if (document.getElementById("status").innerText === "Editando...") {
-    salvarSilencioso();
-  }
-}, 10000);
-
-function salvarSilencioso() {
-  let html = quill.root.innerHTML;
-  fetch('/salvar-laudo/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': getCookie('csrftoken')
-    },
-    body: JSON.stringify({
-      laudoHTML: html,
-      studyInstanceUid: '{{ exame.study_instance_uid }}'
+    fetch('/salvar-laudo/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({
+        laudoHTML: html,
+        studyInstanceUid: '{{ exame.study_instance_uid }}'
+      })
     })
-  })
-  .then(r => r.json())
-  .then(() => {
-    document.getElementById('status').innerText = "Salvo ✅";
-  })
-  .catch(() => {
-    document.getElementById('status').innerText = "Erro ao salvar";
-  });
-}
-
-document.addEventListener("keydown", function (e) {
-  if (e.ctrlKey && e.key === "s") {
-    e.preventDefault();
-    salvar();
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('status').innerText = "Salvo ✅";
+      const link = window.location.origin + "/portal/" + data.codigo;
+      document.getElementById('modalCodigo').value = data.codigo;
+      document.getElementById('modalLink').value = link;
+      document.getElementById('modalSalvo').showModal();
+    })
+    .catch(() => {
+      document.getElementById('status').innerText = "Erro ao salvar";
+    });
   }
-});
 
-const resizer = document.getElementById('resizer');
-const viewer  = document.getElementById('viewer');
-let resizing  = false;
+  function copiarLink() {
+    const input = document.getElementById('modalLink');
+    input.select();
+    navigator.clipboard.writeText(input.value);
+    const btn = document.querySelector('.btn-copiar');
+    btn.innerText = '✅ Copiado!';
+    setTimeout(() => btn.innerText = '📋 Copiar link', 2000);
+  }
 
-resizer.addEventListener('mousedown', () => resizing = true);
-document.addEventListener('mousemove', function (e) {
-  if (!resizing) return;
-  viewer.style.width = e.clientX + "px";
-});
-document.addEventListener('mouseup', () => resizing = false);
+  setInterval(function () {
+    if (document.getElementById("status").innerText === "Editando...") {
+      salvarSilencioso();
+    }
+  }, 10000);
 
-</script>
+  function salvarSilencioso() {
+    let html = quill.root.innerHTML;
+    fetch('/salvar-laudo/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({
+        laudoHTML: html,
+        studyInstanceUid: '{{ exame.study_instance_uid }}'
+      })
+    })
+    .then(r => r.json())
+    .then(() => {
+      document.getElementById('status').innerText = "Salvo ✅";
+    })
+    .catch(() => {
+      document.getElementById('status').innerText = "Erro ao salvar";
+    });
+  }
 
-</body>
-</html>
+  document.addEventListener("keydown", function (e) {
+    if (e.ctrlKey && e.key === "s") {
+      e.preventDefault();
+      salvar();
+    }
+  });
+
+
+  </script>
+
+  </body>
+  </html>

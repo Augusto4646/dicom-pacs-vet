@@ -26,10 +26,7 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 DEBUG = bool(os.environ.get("DEBUG", default=0))
 
 ALLOWED_HOSTS = [
-    "vizionvet.com.br",
-    "www.vizionvet.com.br",
-    "127.0.0.1",
-    "localhost"
+    "*"
 ]
 
 # Application definition
@@ -106,6 +103,10 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+CSRF_TRUSTED_ORIGINS = [
+    'https://vizionvet.com.br',
+    'https://www.vizionvet.com.br',
+]
 
 
 # Internationalization
@@ -122,7 +123,8 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
-
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+    
 STATIC_URL = 'static/'
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "dashboard"    

@@ -1,80 +1,272 @@
 {% load static %}
-
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
-<title>Dashboard</title>
+  <meta charset="UTF-8">
+  <title>VizionVet — Laudos</title>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: 'DM Sans', sans-serif; }
+    .logo-font { font-family: 'Space Mono', monospace; }
+
+    .sidebar {
+      width: 240px;
+      min-height: 100vh;
+      background: #0f1117;
+      border-right: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      margin: 2px 10px;
+      color: #9ca3af;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-decoration: none;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.06); color: #f3f4f6; }
+    .nav-item.active { background: rgba(99,102,241,0.15); color: #818cf8; }
+    .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+
+    .nav-item.back-btn {
+      background: rgba(99,102,241,0.08);
+      border: 1px solid rgba(99,102,241,0.2);
+      color: #818cf8;
+      margin: 8px 10px 4px;
+    }
+    .nav-item.back-btn:hover {
+      background: rgba(99,102,241,0.18);
+      color: #a5b4fc;
+    }
+
+    .tab-btn {
+      padding: 8px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+    .tab-btn:hover { opacity: 0.85; }
+
+    .tab-aguardando        { background: rgba(251,191,36,0.12);  color: #fbbf24; border-color: rgba(251,191,36,0.3); }
+    .tab-aguardando.ativo  { background: rgba(251,191,36,0.25);  border-color: #fbbf24; }
+
+    .tab-urgente           { background: rgba(248,113,113,0.12); color: #f87171; border-color: rgba(248,113,113,0.3); }
+    .tab-urgente.ativo     { background: rgba(248,113,113,0.25); border-color: #f87171; }
+
+    .tab-laudado           { background: rgba(52,211,153,0.12);  color: #34d399; border-color: rgba(52,211,153,0.3); }
+    .tab-laudado.ativo     { background: rgba(52,211,153,0.25);  border-color: #34d399; }
+
+    .painel { display: none; }
+    .painel.ativo { display: block; }
+  </style>
 </head>
 
-<body class="bg-light">
+<body class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 min-h-screen">
+<div class="flex">
 
-<div class="container mt-5">
+  <!-- SIDEBAR -->
+  <aside class="sidebar fixed top-0 left-0 z-10">
+    <div class="px-6 py-5 border-b border-white/5">
+      <div class="logo-font text-white text-lg font-bold">VizionVet</div>
+      <div class="text-gray-500 text-xs mt-0.5">Radiologia Veterinária</div>
+    </div>
 
-<h2 class="mb-4">Gerenciamento de Laudos</h2>
+    <nav class="flex-1 py-4">
+      <a href="{% url 'menu' %}" class="nav-item back-btn">
+        <span class="icon">←</span> Voltar ao Menu
+      </a>
 
-<a href="{% url 'sync_exames' %}" class="btn btn-success mb-3">
-Sincronizar exames
-</a>
+      <div class="px-4 mt-4 mb-2 text-xs text-gray-600 uppercase tracking-widest font-semibold">Principal</div>
 
-<table class="table table-striped">
+      <a href="{% url 'menu' %}" class="nav-item">
+        <span class="icon">⊞</span> Dashboard
+      </a>
+      <a href="{% url 'dashbord' %}" class="nav-item active">
+        <span class="icon">📋</span> Laudos
+      </a>
+      <a href="{% url 'sync_exames' %}" class="nav-item">
+        <span class="icon">🔄</span> Financeiro
+      </a>
 
-<thead>
-<tr>
-<th>Paciente</th>
-<th>Descrição</th>
-<th>Data</th>
-<th>Status</th>
-<th>Ações</th>
-</tr>
-</thead>
+      <div class="px-4 mt-4 mb-2 text-xs text-gray-600 uppercase tracking-widest font-semibold">Sistema</div>
 
-<tbody>
+      <a href="#" class="nav-item">
+        <span class="icon">🐾</span> Pacientes
+      </a>
+      <a href="#" class="nav-item">
+        <span class="icon">⚙️</span> Configurações
+      </a>
+    </nav>
 
-{% for exame in exames %}
+    <div class="px-4 py-4 border-t border-white/5">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-sm">👤</div>
+        <div>
+          <div class="text-sm font-medium text-gray-200">{{ request.user.username }}</div>
+          <a href="#" class="text-xs text-gray-500 hover:text-gray-300">Sair</a>
+        </div>
+      </div>
+    </div>
+  </aside>
 
-<tr>
+  <!-- MAIN -->
+  <main class="ml-[240px] flex-1 p-8">
 
-<td>{{ exame.paciente.nome }}</td>
+    <!-- Header -->
+    <div class="mb-6">
+      <h1 class="text-2xl font-semibold text-white">Laudos</h1>
+      <p class="text-gray-500 text-sm mt-1">Gerencie e acompanhe os exames</p>
+    </div>
 
-<td>{{ exame.descricao }}</td>
+    <!-- TABS -->
+    <div class="flex gap-3 mb-6">
+      <button onclick="trocarTab('aguardando')" id="btn-aguardando" class="tab-btn tab-aguardando ativo">
+        ⏳ Aguardando
+      </button>
+      <button onclick="trocarTab('urgente')" id="btn-urgente" class="tab-btn tab-urgente">
+        🚨 Urgente
+      </button>
+      <button onclick="trocarTab('laudado')" id="btn-laudado" class="tab-btn tab-laudado">
+        ✅ Laudado
+      </button>
+    </div>
 
-<td>{{ exame.study_date }}</td>
+    <!-- PAINEL AGUARDANDO -->
+    <div id="painel-aguardando" class="painel ativo" data-theme="sunset">
+      <div class="card p-4">
+        <div class="overflow-x-auto">
+          <table class="table table-zebra table-sm">
+            <tbody id="tabela_Aguardando" data-status="Aguardando">
+              {% for exame in exames %}
+                {% if exame.status == "Aguardando" %}
+                  <tr data-id="{{ exame.id }}">
+                    <td class="handle cursor-grab">⋮⋮</td>
+                    <td>#{{ exame.id }}</td>
+                    <td>{{ exame.paciente.nome }}</td>
+                    <td>{{ exame.study_date }}</td>
+                    <td class="flex gap-1">
+                      <a href="{% url 'laudo_editor' exame.id %}" class="btn btn-xs btn-primary">Abrir</a>
+                      <a href="http://vizionvet.com.br/orthanc/ui/app/#/#study?uuid={{ exame.orthanc_id }}" target="_blank" class="btn btn-xs btn-error">DICOM</a>
+                      <a href="{% url 'baixar_dicom' exame.id %}" class="btn btn-xs btn-warning">Baixar</a>
+                    </td>
+                  </tr>
+                {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
-<td>
-{% if exame.status == "recebido" %}
-<span class="badge bg-success">Recebido</span>
-{% else %}
-<span class="badge bg-success">Laudado</span>
-{% endif %}
-</td>
+    <!-- PAINEL URGENTE -->
+    <div id="painel-urgente" class="painel" data-theme="abyss">
+      <div class="card p-4">
+        <div class="overflow-x-auto">
+          <table class="table table-zebra table-sm">
+            <tbody id="tabela_Urgente" data-status="Urgente">
+              {% for exame in exames %}
+                {% if exame.status == "Urgente" %}
+                  <tr data-id="{{ exame.id }}">
+                    <td class="handle cursor-grab">⋮⋮</td>
+                    <td>#{{ exame.id }}</td>
+                    <td>{{ exame.paciente.nome }}</td>
+                    <td>{{ exame.study_date }}</td>
+                    <td class="flex gap-1">
+                      <a href="{% url 'laudo_editor' exame.id %}" class="btn btn-xs btn-primary">Abrir</a>
+                      <a href="http://vizionvet.com.br/orthanc/ui/app/#/#study?uuid={{ exame.orthanc_id }}" target="_blank" class="btn btn-xs btn-error">Editar</a>
+                    </td>
+                  </tr>
+                {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
-<td>
+    <!-- PAINEL LAUDADO -->
+    <div id="painel-laudado" class="painel" data-theme="forest">
+      <div class="card p-4">
+        <div class="overflow-x-auto">
+          <table class="table table-zebra table-sm">
+            <tbody id="tabela_Laudado" data-status="Laudado">
+              {% for exame in exames %}
+                {% if exame.status == "Laudado" %}
+                  <tr data-id="{{ exame.id }}">
+                    <td class="handle cursor-grab">⋮⋮</td>
+                    <td>#{{ exame.id }}</td>
+                    <td>{{ exame.paciente.nome }}</td>
+                    <td>{{ exame.study_date }}</td>
+                    <td class="flex gap-1">
+                      <a href="{% url 'laudo_editor' exame.id %}" class="btn btn-xs btn-primary">Abrir</a>
+                      <a href="http://vizionvet.com.br/orthanc/ui/app/#/#study?uuid={{ exame.orthanc_id }}" target="_blank" class="btn btn-xs btn-error">DICOM</a>
+                    </td>
+                  </tr>
+                {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
-<!-- BOTÃO ABRIR -->
-<a href="{% url 'laudo_editor' exame.id %}" class="btn btn-primary btn-sm">
-Abrir
-</a>
-
-<!-- FORM EDITAR -->
-<a href="http://vizionvet.com.br/orthanc/ui/app/#/#study?uuid={{ exame.orthanc_id }}" target="_blank" class="btn btn-danger btn-sm">
-Editar
-</a>
-<a href="{% url 'baixar_dicom' exame.id %}"class="btn btn-warning btn-sm">
-    Baixar DICOM
-</a>
-</td>
-
-</tr>
-
-{% endfor %}
-
-</tbody>
-
-</table>
-
+  </main>
 </div>
 
+<script>
+function trocarTab(qual) {
+  ['aguardando', 'urgente', 'laudado'].forEach(t => {
+    document.getElementById('painel-' + t).classList.remove('ativo');
+    document.getElementById('btn-' + t).classList.remove('ativo');
+  });
+  document.getElementById('painel-' + qual).classList.add('ativo');
+  document.getElementById('btn-' + qual).classList.add('ativo');
+}
+
+function getCookie(name) {
+  return document.cookie.split(';').map(c => c.trim())
+    .find(c => c.startsWith(name + '='))?.split('=')[1];
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  const opcoes = {
+    group: 'shared',
+    animation: 200,
+    handle: '.handle',
+    onAdd: function(evt) {
+      const id = evt.item.dataset.id;
+      const status = evt.to.dataset.status;
+      fetch(`/atualizar_status/${id}/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ status })
+      });
+    }
+  };
+
+  ['Aguardando','Urgente','Laudado'].forEach(id => {
+    new Sortable(document.getElementById('tabela_' + id), opcoes);
+  });
+});
+</script>
 </body>
 </html>

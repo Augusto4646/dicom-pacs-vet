@@ -10,13 +10,20 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.core.files.base import ContentFile
 from django.template.loader import render_to_string
 from rest_framework import viewsets
-from .models import Usuario, Exame
+from .models import Usuario, Exame,Modelo,Laudo,Paciente,Instituicao
 from .serializers import ExameSerializer
 from .util import gerar_codigo_unico
 from base.services.orthanc_sync import sincronizar_estudos
 import requests
 from django.http import HttpResponse, Http404
 from base.models import Exame
+import io
+import zipfile
+import pydicom
+import numpy as np
+from PIL import Image
+import io
+import base64
 
 ORTHANC_URL = "http://vizionvet.com.br/orthanc"
 
@@ -27,7 +34,7 @@ ORTHANC_URL = "http://vizionvet.com.br/orthanc"
 @login_required
 def sync_exames(request):
     sincronizar_estudos()
-    return redirect("dashboard")
+    return redirect("dashbord")
 
 
 # ---------------------------------------------------------------------------
@@ -53,14 +60,18 @@ def novo_exame(request):
 # ---------------------------------------------------------------------------
 
 @login_required
-def dashboard(request):
+def dashbord(request):
     usuario, created = Usuario.objects.get_or_create(user=request.user)
 
     exames = Exame.objects.filter(
-        usuario_veterinario=usuario
-    ).order_by('-study_date')
+    instituicao__in=usuario.instituicoes.all()
+    ).order_by('-id')
 
     return render(request, "dashbord.html", {"exames": exames})
+
+def menu(request):
+    return render(request, "menu.html")
+
 
 
 # ---------------------------------------------------------------------------
@@ -78,7 +89,7 @@ def login_view(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            return redirect("dashboard")
+            return redirect("menu")
     else:
         form = AuthenticationForm()
 
@@ -229,37 +240,113 @@ def editar_paciente(request, exame_id):
 
     return JsonResponse({"error": "invalid method"}, status=405)
 
+# ---------------------------------------------------------------------------
+# Baixar todos dicons de um paciente
+# ---------------------------------------------------------------------------
 
 def baixar_dicom(request, exame_id):
-
     try:
         exame = Exame.objects.get(id=exame_id)
     except Exame.DoesNotExist:
         raise Http404("Exame não encontrado")
 
-    if not exame.orthanc_instance_id:
+    if not exame.orthanc_ids:
         return HttpResponse("Sem DICOM disponível", status=400)
 
-    # 🔥 chamada ao Orthanc
-    url = f"{ORTHANC_URL}/instances/{exame.orthanc_instance_id}/file"
+    zip_buffer = io.BytesIO()
 
-    response = requests.get(url)
+    with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+        for i, orthanc_id in enumerate(exame.orthanc_ids):
+            url = f"{ORTHANC_URL}/instances/{orthanc_id}/file"
+            response = requests.get(url)
+            if response.status_code == 200:
+                zip_file.writestr(f"exame_{exame.id}_{i+1}.dcm", response.content)
 
-    if response.status_code != 200:
-        return HttpResponse("Erro ao buscar DICOM", status=500)
+    zip_buffer.seek(0)
 
-    # 🔥 retorno do arquivo
-    http_response = HttpResponse(
-        response.content,
-        content_type="application/dicom"
-    )
-
-    http_response["Content-Disposition"] = f'attachment; filename="exame_{exame.id}.dcm"'
-
+    http_response = HttpResponse(zip_buffer, content_type="application/zip")
+    http_response["Content-Disposition"] = f'attachment; filename="exame_{exame.id}.zip"'
     return http_response
-def forcar_codigos(request):
-    exames = Exame.objects.filter(codigo_acesso__isnull=True)
-    for exame in exames:
-        exame.save()  # dispara o save() que gera o código
-    return JsonResponse({"atualizados": exames.count()})
 
+# ---------------------------------------------------------------------------
+# Transformar os dicom em imagens para a finalizaçao do laudo
+# ---------------------------------------------------------------------------
+
+def dicom_para_imagens(request, exame_id):
+    exame = get_object_or_404(Exame, id=exame_id)
+    imagens_base64 = []
+    for orthanc_id in exame.orthanc_ids:
+        response = requests.get(f"{ORTHANC_URL}/instances/{orthanc_id}/rendered")
+        if response.status_code != 200:
+            continue
+        base64_img = base64.b64encode(response.content).decode("utf-8")
+        imagens_base64.append(f"data:image/jpeg;base64,{base64_img}")
+    return JsonResponse({"imagens": imagens_base64})
+# ---------------------------------------------------------------------------
+# Listar todos modelos de um usuario
+# ---------------------------------------------------------------------------
+def listar_modelos(request):
+     usuario, created = Usuario.objects.get_or_create(user=request.user)
+
+     modelos = Modelo.objects.filter(
+        usuario_logado=usuario
+     )
+     return render(request, "pagina_modelos.html", {"modelos": modelos})
+# ---------------------------------------------------------------------------
+# Criar um novo modelo
+# --------------------------------------------------------------------------
+def criar_modelos(request):
+    if request.method == "POST":
+        usuario, created = Usuario.objects.get_or_create(user=request.user)
+        Modelo.objects.create(
+            usuario_logado=usuario,
+            nome_modelo=request.POST.get("nome_modelo"),
+            campo2=request.POST.get("campo2"),
+            campo3=request.POST.get("campo3"),
+            campo4=request.POST.get("campo4"),
+            campo5=request.POST.get("campo5"),
+            campo6=request.POST.get("campo6"),
+            campo7=request.POST.get("campo7"),
+            campo8=request.POST.get("campo8"),
+            campo9=request.POST.get("campo9"),
+            campo10=request.POST.get("campo10"),
+            campo11=request.POST.get("campo11"),
+            campo12=request.POST.get("campo12"),
+        )
+        modelos = Modelo.objects.filter(usuario_logado=usuario)
+        return redirect('/listar_modelos/')
+
+ 
+# ---------------------------------------------------------------------------
+# deletar modelo
+# --------------------------------------------------------------------------
+
+
+
+# ---------------------------------------------------------------------------
+# Atualizar Status depois que move de tabela
+# --------------------------------------------------------------------------
+def atualizar_status(request, exame_id):
+    if request.method == "POST":
+        dados = json.loads(request.body)
+        novo_status = dados['status']
+        Exame.objects.filter(id=exame_id).update(status=novo_status)
+        return JsonResponse({'ok': True})
+
+def atualizar_status_laudo_editor(request, exame_id):
+    if request.method == 'POST':
+        Exame.objects.filter(id=exame_id).update(status="Laudado")
+        return JsonResponse({'ok': True})
+def dashboard_visual(request):
+    exames = Exame.objects.all()
+
+    colunas = [
+        {"status": "Aguardando", "tema": "sunset", "titulo": "⏳ Aguardando"},
+        {"status": "Urgente", "tema": "abyss", "titulo": "🚨 Urgente"},
+        {"status": "Laudado", "tema": "forest", "titulo": "✅ Laudado"},
+    ]
+
+    return render(request, "dashbord.html", {
+        "exames": exames,
+        "colunas": colunas
+    })
