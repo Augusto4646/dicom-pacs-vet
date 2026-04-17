@@ -26,11 +26,15 @@ class Usuario(models.Model):
     instituicao_pertencente=models.ForeignKey("Instituicao",on_delete=models.CASCADE,null=True,blank=True,)
     def __str__(self):
         return self.user.username
+class Tutor(models.Model):
+    nome = models.CharField(max_length=50)
+    celular = models.CharField(max_length=50)
 
 
 class Exame(models.Model):
     codigo_acesso = models.CharField(max_length=255, null=True, blank=True)
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE)
+    tutor = models.ForeignKey(Tutor, on_delete=models.CASCADE,null=True)
 
     PAPEL_ESCOLHAS_STATUS = [
         ("Laudado", "Laudado"),
@@ -64,6 +68,7 @@ class Exame(models.Model):
     descricao = models.CharField(max_length=255, null=True, blank=True)
     medico_solicitante = models.CharField(max_length=255, null=True, blank=True)
     tipo_exame = models.CharField(max_length=255, null=True, blank=True)
+    valor = models.DecimalField(max_digits=10, decimal_places=2,default=0)
 
 
     def __str__(self):
@@ -143,13 +148,13 @@ class Financeiro(models.Model):
 
     clinica = models.ForeignKey("Clinica", on_delete=models.SET_NULL, null=True, blank=True)
 
-    valor = models.DecimalField(max_digits=10, decimal_places=2)
     despesa = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    repasse_a_clinica = models.DecimalField(max_digits=10, decimal_places=2, default=0,)
 
     pago = models.BooleanField(default=False)
 
     data = models.DateTimeField(auto_now_add=True)
-
+ 
     def __str__(self):
         return {self.instituicao} - {self.valor}
 

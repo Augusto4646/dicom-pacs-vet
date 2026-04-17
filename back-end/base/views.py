@@ -10,7 +10,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.core.files.base import ContentFile
 from django.template.loader import render_to_string
 from rest_framework import viewsets
-from .models import Usuario, Exame,Modelo,Laudo,Paciente,Instituicao
+from .models import Usuario, Exame,Modelo,Laudo,Paciente,Instituicao,Financeiro
 from .serializers import ExameSerializer
 from .util import gerar_codigo_unico
 from base.services.orthanc_sync import sincronizar_estudos
@@ -69,9 +69,36 @@ def dashbord(request):
 
     return render(request, "dashbord.html", {"exames": exames})
 
-def menu(request):
-    return render(request, "menu.html")
+from django.db.models import Sum
 
+@login_required
+def menu(request):
+    usuario, _ = Usuario.objects.get_or_create(user=request.user)
+
+    inst = usuario.instituicao_pertencente
+
+    financeiros = Financeiro.objects.filter(instituicao=inst)
+
+    recebido = financeiros.filter(pago=True).aggregate(
+        total=Sum("exame__valor")
+    )["total"] or 0
+
+    a_receber = financeiros.filter(pago=False).aggregate(
+        total=Sum("exame__valor")
+    )["total"] or 0
+
+    despesa = financeiros.aggregate(
+        total=Sum("despesa")
+    )["total"] or 0
+
+    saldo_liquido = recebido - despesa
+
+    return render(request, "menu.html", {
+        "recebido": recebido,
+        "a_receber": a_receber,
+        "despesa": despesa,
+        "saldo_liquido": saldo_liquido,
+    })
 
 
 # ---------------------------------------------------------------------------
@@ -318,11 +345,14 @@ def criar_modelos(request):
         modelos = Modelo.objects.filter(usuario_logado=usuario)
         return redirect('/listar_modelos/')
 
- 
+def inserir_financeiro(request):
+    if request.method=="POST":
+     Financeiro.objects.create(
+
+     )
 # ---------------------------------------------------------------------------
 # deletar modelo
 # --------------------------------------------------------------------------
-
 
 
 # ---------------------------------------------------------------------------
