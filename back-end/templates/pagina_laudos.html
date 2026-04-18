@@ -15,50 +15,52 @@
 
 <body class="main-bg text-gray-100">    
 <div class="conteinar_toda_parte_laudo">
+<form method="POST" action="/capturar_informacoes_laudo/">
+{% csrf_token %}
 <div class="conteiner-data">
 <p>Data</p>
-<input type="text" placeholder="Medium" class="input input-xs" />
+<input type="text" name="data" placeholder="Medium" class="input input-xs" />
 </div>
 <div class="conteiner-clinica">
 <p>Clinica</p>
-<input type="text" placeholder="Medium" class="input input-xs" />
+<input type="text" name="clinica" placeholder="Medium" class="input input-xs" />
 </div>
 <div class="conteirner-veterinário">
 <p>Veterinario</p>
-<input type="text" placeholder="Medium" class="input input-xs" />
+<input type="text" name="Veterinario" placeholder="Medium" class="input input-xs" />
 </div>
 <div class="conteirner-tutor">
 <p>Tutor</p>
-<input type="text" placeholder="Medium" class="input input-xs" />
+<input type="text" name="Tutor" placeholder="Medium" class="input input-xs" />
 </div>
 <div class="conteirner-paciente">
 <p>Paciente</p>
-<input type="text" placeholder="Medium" class="input input-xs" />
+<input type="text" name="Paciente" placeholder="Medium" class="input input-xs" />
 </div>
 <div class="conteirner-tipo-exame">
 <p>Tipo De Exame</p>
-<input type="text" placeholder="Medium" class="input input-xs" />
+<input type="text" name="tipo_exame" placeholder="Medium" class="input input-xs" />
 </div>
 <div class="conteirner-modelo">
 <p>Modelo</p>
-<input type="text" placeholder="Medium" class="input input-xs" />
+<input type="text" name="Modelo" placeholder="Medium" class="input input-xs" />
 </div>
 
 <div class="conteirner-pago">
 <p>Pago</p>
-<input type="checkbox" class="$$checkbox" id="my-checkbox" />
+<input type="checkbox" name="pago" class="$$checkbox" id="my-checkbox" />
 </div>
 
-<div class="conteirner-modelo">
+<div class="conteirner-valor">
 <p>Valor</p>
-<input type="text" placeholder="Medium" class="input input-xs" />
+<input type="text" name="valor" placeholder="Medium" class="input input-xs" />
 </div>
 
-<div class="conteirner-modelo">
+<div class="conteirner-repasse">
 <p>Repasse</p>
-<input type="text" placeholder="Medium" class="input input-xs" />
+<input type="text" name="repasse" placeholder="Medium" class="input input-xs" />
 </div>
-
+</form>
 </div>
 <script>
   document.getElementById("my-checkbox").indeterminate = true

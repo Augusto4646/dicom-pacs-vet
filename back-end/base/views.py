@@ -79,24 +79,16 @@ def menu(request):
 
     financeiros = Financeiro.objects.filter(instituicao=inst)
 
-    recebido = financeiros.filter(pago=True).aggregate(
-        total=Sum("exame__valor")
-    )["total"] or 0
+    recebido = financeiros.filter(pago=True)
 
-    a_receber = financeiros.filter(pago=False).aggregate(
-        total=Sum("exame__valor")
-    )["total"] or 0
+    a_receber = financeiros.filter(pago=False)
 
-    despesa = financeiros.aggregate(
-        total=Sum("despesa")
-    )["total"] or 0
 
-    saldo_liquido = recebido - despesa
+    saldo_liquido = recebido
 
     return render(request, "menu.html", {
         "recebido": recebido,
         "a_receber": a_receber,
-        "despesa": despesa,
         "saldo_liquido": saldo_liquido,
     })
 
@@ -108,7 +100,6 @@ def menu(request):
 def home(request):
     form = AuthenticationForm()
     return render(request, "home.html", {"form": form})
-
 
 def login_view(request):
     if request.method == "POST":
@@ -122,23 +113,11 @@ def login_view(request):
 
     return render(request, "login.html", {"form": form})
 
-
+def pagina_laudos(request):
+ return render(request,"pagina_laudos.html",{"form":form})
 # ---------------------------------------------------------------------------
 # Editor de laudo
 # ---------------------------------------------------------------------------
-
-@login_required
-def laudo_editor(request, exame_id):
-    usuario, created = Usuario.objects.get_or_create(user=request.user)
-    exame = get_object_or_404(Exame, id=exame_id)
-    exames = Exame.objects.filter(
-    instituicao__in=usuario.instituicoes.all()
-    )    # Gera código de acesso apenas se ainda não existir
-    if not exame.codigo_acesso:
-        exame.codigo_acesso = gerar_codigo_unico()
-        exame.save()
-
-    return render(request, "laudo_editor.html", {"exame": exame, "exames": exames})
 
 # ---------------------------------------------------------------------------
 # Salvar laudo (HTML)
@@ -345,11 +324,37 @@ def criar_modelos(request):
         modelos = Modelo.objects.filter(usuario_logado=usuario)
         return redirect('/listar_modelos/')
 
-def inserir_financeiro(request):
-    if request.method=="POST":
-     Financeiro.objects.create(
+@login_required
+def laudo_editor(request, exame_id):
+    usuario, created = Usuario.objects.get_or_create(user=request.user)
+    exame = get_object_or_404(Exame, id=exame_id)
+    exames = Exame.objects.filter(instituicao__in=usuario.instituicoes.all())
+    membros = exame.instituicao.membros_insituticao.all() if exame.instituicao else []
+    modelos = Modelo.objects.filter(usuario_logado=usuario)
 
-     )
+    if request.method == 'POST':
+        veterinario_id = request.POST.get("veterinario")
+        if veterinario_id:
+            exame.usuario_dicom = Usuario.objects.get(id=veterinario_id)
+
+        exame.tipo_exame = request.POST.get("tipo_exame")
+
+        if not exame.codigo_acesso:
+            exame.codigo_acesso = exame._gerar_codigo()
+
+        exame.save()
+
+        exame.paciente.nome = request.POST.get("Paciente")
+        exame.paciente.nome_tutor = request.POST.get("Tutor")
+        exame.paciente.save()
+
+        if exame.financeiro:
+            exame.financeiro.pago = request.POST.get("pago") == "on"
+            exame.financeiro.valor = request.POST.get("valor") or 0
+            exame.financeiro.valor_repasse_a_clinica = request.POST.get("repasse") or 0
+            exame.financeiro.save()
+
+    return render(request, "laudo_editor.html", {"exame": exame, "exames": exames, "membros": membros, "modelos": modelos}) 
 # ---------------------------------------------------------------------------
 # deletar modelo
 # --------------------------------------------------------------------------

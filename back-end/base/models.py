@@ -26,22 +26,53 @@ class Usuario(models.Model):
     instituicao_pertencente=models.ForeignKey("Instituicao",on_delete=models.CASCADE,null=True,blank=True,)
     def __str__(self):
         return self.user.username
-class Tutor(models.Model):
-    nome = models.CharField(max_length=50)
-    celular = models.CharField(max_length=50)
 
+class Financeiro(models.Model):
+    instituicao = models.ForeignKey(
+        "Instituicao",
+        on_delete=models.CASCADE,
+        related_name="financeiros"
+    )
+    forma_pagamento = models.CharField(max_length=50, null=True, blank=True)
+
+
+    clinica = models.ForeignKey("Clinica", on_delete=models.SET_NULL, null=True, blank=True)
+
+    despesa = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    pago = models.BooleanField(default=False)
+
+    data = models.DateTimeField(auto_now_add=True)
+ 
+    valor = models.DecimalField(max_digits=10, decimal_places=2,default=0)
+    
+    valor_repasse_a_clinica = models.DecimalField(max_digits=10, decimal_places=2, default=0,)
+
+    def __str__(self):
+        return {self.instituicao} - {self.valor}
+
+    def lucro_liquido(self):
+       return self.valor - self.despesa
+
+
+class Clinica(models.Model):
+    nome = models.CharField(max_length=100, blank=True, null=True)
+
+    def __str__(self):
+        return self.nome or "Clinica"
 
 class Exame(models.Model):
     codigo_acesso = models.CharField(max_length=255, null=True, blank=True)
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE)
-    tutor = models.ForeignKey(Tutor, on_delete=models.CASCADE,null=True)
-
+    financeiro = models.ForeignKey(Financeiro, on_delete=models.CASCADE,null=True)
+    modelo=models.ForeignKey("Modelo", on_delete=models.CASCADE,null=True)
     PAPEL_ESCOLHAS_STATUS = [
         ("Laudado", "Laudado"),
         ("Aguardando", "Aguardando"),
         ("Urgente", "Urgente"),
     ]
     status = models.CharField(max_length=20, choices=PAPEL_ESCOLHAS_STATUS, default="Aguardando")
+    subtipo_exame = models.CharField(max_length=100, null=True, blank=True)
 
     usuario_dicom = models.ForeignKey(
         Usuario,
@@ -68,7 +99,6 @@ class Exame(models.Model):
     descricao = models.CharField(max_length=255, null=True, blank=True)
     medico_solicitante = models.CharField(max_length=255, null=True, blank=True)
     tipo_exame = models.CharField(max_length=255, null=True, blank=True)
-    valor = models.DecimalField(max_digits=10, decimal_places=2,default=0)
 
 
     def __str__(self):
@@ -137,33 +167,3 @@ class Instituicao(models.Model):
         return total
 
 
-class Financeiro(models.Model):
-    exame = models.ForeignKey("Exame", on_delete=models.CASCADE)
-
-    instituicao = models.ForeignKey(
-        "Instituicao",
-        on_delete=models.CASCADE,
-        related_name="financeiros"
-    )
-
-    clinica = models.ForeignKey("Clinica", on_delete=models.SET_NULL, null=True, blank=True)
-
-    despesa = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    repasse_a_clinica = models.DecimalField(max_digits=10, decimal_places=2, default=0,)
-
-    pago = models.BooleanField(default=False)
-
-    data = models.DateTimeField(auto_now_add=True)
- 
-    def __str__(self):
-        return {self.instituicao} - {self.valor}
-
-def lucro_liquido(self):
-    return self.entrada - self.despesa
-
-
-class Clinica(models.Model):
-    nome = models.CharField(max_length=100, blank=True, null=True)
-
-    def __str__(self):
-        return self.nome or "Clinica"

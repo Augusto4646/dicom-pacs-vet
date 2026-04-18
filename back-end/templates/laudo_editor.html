@@ -1,581 +1,1386 @@
-  <!DOCTYPE html>
-  <html>
-  <head>
-  <meta charset="UTF-8">
-  <title>Laudo</title>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Laudo</title>
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://unpkg.com/split.js/dist/split.min.js"></script>
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill-image-resize-module@3.0.0/image-resize.min.js"></script>
 
-  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://unpkg.com/split.js/dist/split.min.js"></script>
-  <style>
+<style>
+/* ============================================================
+   RESET & ROOT VARIABLES
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
-    margin: 0;
-    font-family: Arial;
-    height: 100vh;
-    overflow: auto;
-    background: #f5f5f5;
-  }
+:root {
+  --bg:          #0f1117;
+  --surface:     #1a1d27;
+  --surface2:    #22263a;
+  --surface3:    #2d3148;
+  --border:      rgba(255,255,255,0.07);
+  --border-md:   rgba(255,255,255,0.12);
+  --text:        #e2e8f0;
+  --text-muted:  #6b7280;
+  --text-dim:    #9ca3af;
+  --accent:      #6366f1;
+  --accent-hover:#818cf8;
+  --accent-dim:  rgba(99,102,241,0.15);
+  --green:       #2ecc71;
+  --green-dim:   rgba(46,204,113,0.12);
+  --red:         #e74c3c;
+  --amber:       #f59e0b;
+  --teal:        #1abc9c;
+  --purple:      #9b59b6;
+  --blue:        #3498db;
+  --gray:        #4b5563;
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   10px;
+}
 
-  .container {
-    display: flex;
-    height: 100vh;
-    overflow: hidden; /* adicione isso */
-  }
+/* ============================================================
+   BASE
+   ============================================================ */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg);
+  height: 100vh;
+  overflow: hidden;
+  line-height: 1.5;
+}
 
-.viewer {
-  /* remova flex: 1 */
-  width: 50%;
-  min-width: 0;
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.app {
+  display: flex;
+  height: 100vh;
   overflow: hidden;
 }
 
-  .viewer iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-  }
+/* ============================================================
+   TOGGLE BAR (fixed top-left)
+   ============================================================ */
+.toggle-bar {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 300;
+  display: flex;
+  gap: 6px;
+}
 
-  .gutter {
-    background-color: #cfcfcf;
-    cursor: col-resize;
-  }
+.toggle-bar .tbtn {
+  padding: 5px 14px;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: white;
+  transition: opacity 0.15s;
+}
+.toggle-bar .tbtn:hover { opacity: 0.85; }
+.tbtn-laudo  { background: var(--accent); }
+.tbtn-viewer { background: var(--gray); }
 
-  .gutter:hover {
-    background-color: #999;
-  }
+/* ============================================================
+   LEFT PANEL
+   ============================================================ */
+#lado_esquerdo {
+  width: 50%;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+}
 
+/* ---- FORM WRAPPER ---- */
+#laudo_form {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
 
-.editor {
+/* ---- VIEWER ---- */
+#viewer_iframe {
+  width: 100%;
+  height: 100%;
+  display: none;
+}
+#viewer_iframe iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+.tabs {
+  display: flex;
+  padding: 12px 14px 0;
+  gap: 3px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  padding: 7px 14px;
+  border: none;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: var(--surface2);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid var(--border);
+  border-bottom: none;
+}
+.tab-btn:hover {
+  background: var(--surface3);
+  color: var(--text-dim);
+}
+.tab-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+/* ============================================================
+   FORM BODY
+   ============================================================ */
+.form-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 14px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface3) transparent;
+}
+.form-body::-webkit-scrollbar { width: 4px; }
+.form-body::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 4px; }
+
+/* ============================================================
+   FIELD GROUPS
+   ============================================================ */
+.field-group {
+  margin-bottom: 14px;
+}
+
+.field-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 5px;
+}
+
+.add-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--green);
+  color: white;
+  border: none;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+.add-btn:hover { opacity: 0.8; }
+
+.edit-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--surface3);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.edit-btn:hover { background: var(--surface3); color: var(--text); }
+.edit-btn.accent { background: var(--accent); color: white; border-color: var(--accent); }
+
+.info-icon {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--surface3);
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+
+/* ============================================================
+   SELECTS
+   ============================================================ */
+.select-wrap {
+  position: relative;
+}
+
+.select-wrap select {
+  width: 100%;
+  padding: 8px 30px 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  appearance: none;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.select-wrap select:focus { border-color: var(--accent); }
+.select-wrap select option { background: var(--surface2); color: var(--text); }
+
+.select-wrap::after {
+  content: '▾';
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+  font-size: 10px;
+}
+
+/* ============================================================
+   INPUTS
+   ============================================================ */
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="email"],
+input[type="tel"] {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--surface2);
+  outline: none;
+  transition: border-color 0.15s;
+}
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus { border-color: var(--accent); }
+input::placeholder { color: var(--text-muted); }
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.5);
+  cursor: pointer;
+}
+
+/* ============================================================
+   GRID LAYOUT
+   ============================================================ */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* ============================================================
+   PAGO TOGGLE
+   ============================================================ */
+.pago-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.pago-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex: 1;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--surface3);
+  border: 1px solid var(--border-md);
+  border-radius: 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 2px;
+  top: 2px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+.toggle-switch input:checked + .toggle-slider {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(18px);
+  background: white;
+}
+
+/* ============================================================
+   VALOR INPUTS WITH PREFIX
+   ============================================================ */
+.valor-input-wrap {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.valor-input-wrap:focus-within { border-color: var(--accent); }
+
+.valor-prefix {
+  padding: 8px 10px;
+  background: var(--bg);
+  border-right: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+
+.valor-input-wrap input {
+  border: none;
+  border-radius: 0;
+  flex: 1;
+  background: var(--surface2);
+  width: 100%;
+}
+.valor-input-wrap input:focus {
+  border-color: transparent;
+  outline: none;
+}
+
+/* ============================================================
+   SECTION DIVIDER
+   ============================================================ */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 14px;
+}
+.section-divider span {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+.section-divider::before,
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ============================================================
+   TOTAL BAR
+   ============================================================ */
+.total-bar {
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+
+.total-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.total-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.total-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 10px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  letter-spacing: 0.03em;
+}
+.submit-btn:hover { background: var(--accent-hover); }
+
+/* ============================================================
+   SPLIT GUTTER
+   ============================================================ */
+.gutter {
+  background: var(--border);
+  cursor: col-resize;
+  width: 5px !important;
+  transition: background 0.15s;
+  position: relative;
+}
+.gutter:hover { background: var(--accent); }
+.gutter::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 32px;
+  background: var(--border-md);
+  border-radius: 2px;
+}
+
+/* ============================================================
+   RIGHT EDITOR PANEL
+   ============================================================ */
+.editor-panel {
   width: 50%;
   min-width: 0;
   display: flex;
   flex-direction: column;
   height: 100vh;
-  padding: 10px;
-  box-sizing: border-box;
+  background: var(--surface);
+}
+
+/* ---- EDITOR TOPBAR ---- */
+.editor-topbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  background: var(--surface);
+}
+
+.topbar-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.topbar-select {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+}
+
+/* ---- TOPBAR BUTTONS ---- */
+.tbtn-action {
+  padding: 5px 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+.tbtn-action:hover { opacity: 0.85; }
+
+.btn-salvar  { background: var(--green); }
+.btn-pdf     { background: var(--red); }
+.btn-html    { background: var(--purple); }
+.btn-texto   { background: var(--amber); }
+.btn-modelo  { background: var(--teal); }
+.btn-limpar  { background: var(--gray); }
+.btn-img     { background: #374151; }
+.btn-copiar  { background: var(--accent); }
+.btn-fechar  { background: var(--gray); }
+.btn-neutro  { background: var(--surface3); color: var(--text); border: 1px solid var(--border); }
+
+/* ---- CODIGO BADGE ---- */
+.codigo-badge {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  font-family: monospace;
+  letter-spacing: 0.05em;
+}
+
+/* ---- STATUS BAR ---- */
+.statusbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--bg);
+}
+
+.status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  margin-right: 5px;
+}
+.status-dot.editing { background: var(--amber); }
+.status-dot.saved   { background: var(--green); }
+
+/* ---- QUILL EDITOR ---- */
+#editor { flex: 1; overflow: hidden; background: var(--bg); }
+
+.ql-toolbar.ql-snow {
+  background: var(--surface2) !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border) !important;
+  padding: 6px 10px;
+}
+.ql-toolbar .ql-stroke { stroke: var(--text-muted) !important; }
+.ql-toolbar .ql-fill   { fill: var(--text-muted) !important; }
+.ql-toolbar .ql-picker-label { color: var(--text-muted) !important; }
+.ql-toolbar button:hover .ql-stroke { stroke: var(--text) !important; }
+.ql-toolbar button:hover .ql-fill   { fill: var(--text) !important; }
+.ql-toolbar button.ql-active .ql-stroke { stroke: var(--accent-hover) !important; }
+.ql-toolbar .ql-picker-options {
+  background: var(--surface2) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-md) !important;
+}
+.ql-toolbar .ql-picker-item { color: var(--text) !important; }
+.ql-toolbar .ql-picker-item:hover { color: var(--accent-hover) !important; }
+
+.ql-container.ql-snow {
+  border: none !important;
+  background: var(--bg);
+  height: calc(100% - 42px);
+}
+
+.ql-editor {
+  font-size: 15px;
+  max-width: 820px;
+  margin: auto;
+  color: var(--text);
+  padding: 20px 24px;
+}
+.ql-editor p { color: var(--text); }
+.ql-editor img { max-width: 100%; height: auto; border-radius: var(--radius-sm); }
+.ql-editor.ql-blank::before { color: var(--text-muted) !important; font-style: normal; }
+
+/* ---- ACTIONS BAR ---- */
+.actions-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--surface);
+}
+
+/* ============================================================
+   DROPDOWN
+   ============================================================ */
+.dd-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.dd-content {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: var(--surface2);
+  border: 1px solid var(--border-md);
+  border-radius: var(--radius-lg);
+  min-width: 200px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  z-index: 100;
   overflow: hidden;
-  
 }
 
+.dd-content a {
+  display: block;
+  padding: 9px 14px;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 12px;
+  transition: all 0.12s;
+}
+.dd-content a:hover {
+  background: var(--accent-dim);
+  color: var(--accent-hover);
+}
+.dd-content.open { display: block; }
 
-  .title {
-    font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 10px;
-  }
-
-  .controls {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 10px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-
-  .controls select {
-    padding: 6px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-  }
-
-  .statusbar {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-    color: #555;
-    margin-bottom: 10px;
-  }
-
-  #editor {
-      flex: 1;
-    background: white;
-    overflow-x: hidden;
-
-  }
-
-  .ql-container {
-    height: 100%;
-  }
-
-  .ql-editor {
-    font-size: 16px;
-    white-space: pre-wrap;
-    max-width: 800px;
-    margin: auto;
-    word-break: break-word;
-    overflow-wrap: break-word;
-  }
-
-  .ql-editor img {
-    max-width: 100%;
-    height: auto;
-    margin: 10px 0;
-    border-radius: 6px;
-  }
-  .dropdown {
-    position: relative;
-    display: inline-block;
-  }
-
-  .dropdown-content {
-    display: none;
-    position: absolute;
-    background-color: #fff;
-    min-width: 200px;
-    box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
-    z-index: 1;
-  }
-
-  .dropdown-content a {
-    color: black;
-    padding: 10px;
-    text-decoration: none;
-    display: block;
-  }
-
-  .dropdown-content a:hover {
-    background-color: #ddd;
-  }
-
-  .dropdown-content.open {
-    display: block;
-  }
-
-
-  button {
-    padding: 8px 12px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    color: white;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  button:hover { opacity: 0.9; }
-
-  .btn-salvar  { background: #2ecc71; }
-  .btn-pdf     { background: #e74c3c; }
-  .btn-html    { background: #9b59b6; }
-  .btn-texto   { background: #f39c12; }
-  .btn-modelo  { background: #1abc9c; }
-  .btn-limpar  { background: #7f8c8d; }
-  .btn-img     { background: #34495e; }
-
-  .actions {
-    margin-top: 10px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  /* MODAL */
+/* ============================================================
+   MODAL / DIALOG
+   ============================================================ */
 dialog {
-    border: none;
-    border-radius: 10px;
-    padding: 24px;
-    min-width: 540px;
-    width: 90vw;
-    max-height: 90vh;
-    overflow-y: scroll ;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    font-family: Arial;
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  min-width: 500px;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface3) transparent;
+}
+dialog::backdrop {
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(2px);
 }
 
-  dialog::backdrop {
-    background: rgba(0,0,0,0.4);
-  }
+dialog h3 {
+  margin: 0 0 20px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+}
 
-  dialog h3 {
-    margin: 0 0 16px;
-    font-size: 18px;
-  }
+.modal-row { margin-bottom: 14px; }
 
-  .modal-row {
-    margin-bottom: 12px;
-  }
+.modal-row label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 5px;
+}
 
-  .modal-row label {
-    font-size: 13px;
-    color: #555;
-    display: block;
-    margin-bottom: 4px;
-  }
+.modal-row input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  background: var(--surface2);
+  color: var(--text);
+}
+.modal-row input:focus { border-color: var(--accent); }
 
-  .modal-row input {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 14px;
-    box-sizing: border-box;
-  }
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
 
-  .modal-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 16px;
-  }
+/* ============================================================
+   SCROLLBAR GLOBAL
+   ============================================================ */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-md); }
 
-  .btn-copiar { background: #3498db; }
-  .btn-fechar { background: #7f8c8d; }
+/* ============================================================
+   MISC
+   ============================================================ */
+.spacer { flex: 1; }
 
-  </style>
-  </head>
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.badge-accent { background: var(--accent-dim); color: var(--accent-hover); }
+.badge-green  { background: var(--green-dim);  color: var(--green); }
+</style>
+</head>
 
-  <body>
+<body>
 
-  <!-- MODAL -->
-  <dialog id="modalSalvo">
-    <h3>✅ Laudo salvo!</h3>
-    <div class="modal-row">
-      <label>Código:</label>
-      <input id="modalCodigo" type="text" readonly>
-    </div>
-    <div class="modal-row">
-      <label>Link para o paciente:</label>
-      <input id="modalLink" type="text" readonly>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-copiar" onclick="copiarLink()">📋 Copiar link</button>
-      <button class="btn-fechar" onclick="document.getElementById('modalSalvo').close()">Fechar</button>
-    </div>
-  </dialog>
-  <dialog id="dialogModelos"></dialog>
-  <div class="container">
+<!-- ============================================================
+     TOGGLE BAR
+     ============================================================ -->
+<div class="toggle-bar">
+  <button class="tbtn tbtn-laudo"  onclick="mostrar('laudo')">📋 Laudo</button>
+  <button class="tbtn tbtn-viewer" onclick="mostrar('viewer')">🖼 Viewer</button>
+</div>
 
-    <div class="viewer" id="viewer">
+<!-- ============================================================
+     MODAL: LAUDO SALVO
+     ============================================================ -->
+<dialog id="modalSalvo">
+  <h3>✅ Laudo salvo com sucesso!</h3>
+  <div class="modal-row">
+    <label>Código de acesso</label>
+    <input id="modalCodigo" type="text" readonly>
+  </div>
+  <div class="modal-row">
+    <label>Link para o paciente</label>
+    <input id="modalLink" type="text" readonly>
+  </div>
+  <div class="modal-actions">
+    <button class="tbtn-action btn-copiar" onclick="copiarLink()">📋 Copiar link</button>
+    <button class="tbtn-action btn-fechar" onclick="document.getElementById('modalSalvo').close()">Fechar</button>
+  </div>
+</dialog>
+
+
+
+
+<!-- Modal de modelos de laudo -->
+<dialog id="dialogModelos"></dialog>
+
+<!-- ============================================================
+     APP
+     ============================================================ -->
+<div class="app">
+
+  <!-- ============================================================
+       LEFT PANEL
+       ============================================================ -->
+  <div id="lado_esquerdo">
+
+    <!-- FORM VIEW -->
+    <div id="laudo_form">
+
+      <!-- TABS -->
+      <div class="tabs">
+        <button class="tab-btn active" onclick="setTab(this,'ultrassom')">ULTRASSOM</button>
+        <button class="tab-btn" onclick="setTab(this,'ecocardiograma')">ECOCARDIOGRAMA</button>
+        <button class="tab-btn" onclick="setTab(this,'procedimentos')">PROCEDIMENTOS</button>
+        <button class="tab-btn" onclick="setTab(this,'radiografia')">RADIOGRAFIA</button>
+      </div>
+
+      <!-- FORM BODY -->
+      <div class="form-body">
+        <form method="POST" action="/laudo_editor/{{ exame.id }}/" id="mainForm">
+          {% csrf_token %}
+          <input type="hidden" name="tipo_exame" id="tipo_exame_hidden" value="ultrassom">
+
+          <!-- DATA -->
+          <div class="field-group">
+            <div class="field-label">Data</div>
+<input type="date" name="data" value="{% now 'Y-m-d' %}">          </div>
+
+          <!-- CLINICA + VETERINARIO -->
+          <div class="grid-2">
+            <div class="field-group">
+              <div class="field-label">
+                Clínica
+                <button type="button" class="add-btn" title="Adicionar clínica">+</button>
+                <button type="button" class="edit-btn" title="Editar">✏</button>
+                <div class="info-icon" title="Informações">i</div>
+              </div>
+              <div class="select-wrap">
+                <select name="clinica">
+                  <option value="">Selecionar..</option>
+                </select>
+              </div>
+            </div>
+            <div class="field-group">
+              <div class="field-label">
+                Veterinário
+                <button type="button" class="add-btn" title="Adicionar">+</button>
+                <button type="button" class="edit-btn" title="Editar">✏</button>
+              </div>
+              <div class="select-wrap">
+<select name="veterinario">
+  <option value="">Selecionar..</option>
+  {% for membro in membros %}
+    <option value="{{ membro.id }}" 
+      {% if membro.user == request.user %}selected{% endif %}>
+      {{ membro.user.username }}
+    </option>
+  {% endfor %}
+</select>
+              </div>
+            </div>
+          </div>
+
+          <!-- TUTOR + PACIENTE -->
+          <div class="grid-2">
+            <div class="field-group">
+              <div class="field-label">
+                Tutor
+              </div>
+              <div class="select-wrap">
+               <input type="text" name="Tutor" value="{{ exame.paciente.nome_tutor }}">
+              </div>
+            </div>
+            <div class="field-group">
+              <div class="field-label">
+                Paciente
+                <button type="button" class="add-btn">+</button>
+                <button type="button" class="edit-btn">✏</button>
+              </div>
+              <div class="select-wrap">
+                <input type="text" name="Paciente" value="{{ exame.paciente.nome }}">
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- TIPO DE EXAME + MODELO -->
+          <div class="grid-2">
+            <div class="field-group">
+              <div class="field-label">Tipo de Exame</div>
+              <div class="select-wrap">
+                <select name="subtipo_exame">
+                  <option value="">Rx de tórax</option>
+                  <option>Ultrassom abdominal</option>
+                  <option>Rx de abdômen</option>
+                  <option>Rx coxofemoral</option>
+                  <option>Rx de membro torácico</option>
+                  <option>Rx de membro pélvico</option>
+                  <option>Rx de joelho</option>
+                  <option>Rx de coluna</option>
+                </select>
+              </div>
+            </div>
+            <div class="field-group">
+              <div class="field-label">
+                Modelo de Laudo
+
+                <button onclick="modelo()" type="button" class="add-btn">+</button>
+                <button type="button" class="edit-btn accent">✏</button>
+              </div>
+              <div class="select-wrap">
+<select name="Modelo" onchange="aplicarModelo(this.value)">
+                {% for x in modelos %}
+                  <option value="{{ x.id }}">{{ x.nome_modelo }}</option>
+                    {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- PAGO -->
+          <div class="pago-row">
+            <span class="pago-label">Pago</span>
+            <label class="toggle-switch">
+              <input type="checkbox" name="pago" id="pago-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <!-- FORMA DE PAGAMENTO -->
+          <div class="field-group">
+            <div class="field-label">
+              Forma de Pagamento
+              <button type="button" class="add-btn">+</button>
+              <button type="button" class="edit-btn">✏</button>
+            </div>
+            <div class="select-wrap">
+              <select name="forma_pagamento">
+                <option value="">PIX</option>
+                <option>Dinheiro</option>
+                <option>Cartão de Crédito</option>
+                <option>Cartão de Débito</option>
+                <option>Boleto</option>
+                <option>Transferência</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- DIVIDER -->
+          <div class="section-divider"><span>Valores</span></div>
+
+          <!-- VALOR + REPASSE -->
+          <div class="grid-2">
+            <div class="field-group">
+              <div class="field-label">Valor <div class="info-icon">i</div></div>
+              <div class="valor-input-wrap">
+                <span class="valor-prefix">R$</span>
+                <input type="number" name="valor" id="valor-input"
+                       placeholder="0,00" step="0.01" min="0"
+                       oninput="calcTotal()">
+              </div>
+            </div>
+            <div class="field-group">
+              <div class="field-label">Repasse <div class="info-icon">i</div></div>
+              <div class="valor-input-wrap">
+                <span class="valor-prefix">R$</span>
+                <input type="number" name="repasse" id="repasse-input"
+                       placeholder="0,00" step="0.01" min="0"
+                       oninput="calcTotal()">
+              </div>
+            </div>
+          </div>
+
+        </form>
+      </div><!-- /form-body -->
+
+      <!-- TOTAL BAR -->
+      <div class="total-bar">
+        <div class="total-inner">
+          <div>
+            <div class="total-label">Valor total à receber</div>
+            <div class="total-value" id="total-display">R$ 0,00</div>
+          </div>
+          <span class="badge badge-accent" id="status-pago">Pendente</span>
+        </div>
+        <button type="submit" form="mainForm" class="submit-btn">
+          Salvar informações
+        </button>
+      </div>
+
+    </div><!-- /laudo_form -->
+
+    <!-- VIEWER VIEW -->
+    <div id="viewer_iframe">
       <iframe src="/viewer/viewer/dicomweb?StudyInstanceUIDs={{ exame.study_instance_uid }}"></iframe>
     </div>
-    {% if request.user.usuario.papel == 'V' %}
 
-    <div class="editor">
+  </div><!-- /lado_esquerdo -->
 
-      <div class="title">Laudo Radiográfico</div>
+  <!-- ============================================================
+       RIGHT EDITOR PANEL
+       ============================================================ -->
+  {% if request.user.usuario.papel == 'V' %}
+  <div class="editor-panel">
 
-      <div class="controls">
-        <label>Tamanho:</label>
-        <select id="fontSize">
-          <option value="12px">12</option>
-          <option value="14px">14</option>
-          <option value="16px" selected>16</option>
-          <option value="18px">18</option>
-          <option value="24px">24</option>
-          <option value="32px">32</option>
-        </select>
-        <button onclick="setSize()">🔠 Aplicar</button>
-        <button class="btn-pdf" onclick="gerarPDF()">📄 PDF</button>
-  <div>Código: {{ exame.codigo_acesso }}</div>    
-  <div class="dropdown" onclick="this.querySelector('.dropdown-content').classList.toggle('open')">
-  <button class="dropbtn btn-copiar">Paciente atual: {{exame.paciente.nome}}</button>
-  <div class="dropdown-content">
-    {% for e in exames %}
-      <a href="{% url 'laudo_editor' e.id %}">{{ e.paciente.nome }}</a>
-    {% endfor %}
-  </div>
-
-  </div>
-  </div>
-
-      <div class="statusbar">
-        <div id="status">Não salvo</div>
-        <div id="contador">0 palavras</div>
+    <!-- TOPBAR -->
+    <div class="editor-topbar">
+      <span class="topbar-label">Tamanho</span>
+      <select id="fontSize" class="topbar-select">
+        <option value="12px">12</option>
+        <option value="14px">14</option>
+        <option value="16px" selected>16</option>
+        <option value="18px">18</option>
+        <option value="24px">24</option>
+        <option value="32px">32</option>
+      </select>
+      <button onclick="setSize()" class="tbtn-action btn-neutro">🔠</button>
+      <button onclick="gerarPDF()" class="tbtn-action btn-pdf">📄 PDF</button>
+      <span class="codigo-badge">{{ exame.codigo_acesso }}</span>
+      <div class="spacer"></div>
+      <div class="dd-wrap" onclick="this.querySelector('.dd-content').classList.toggle('open')">
+        <button class="tbtn-action btn-copiar">{{ exame.paciente.nome }} ▾</button>
+        <div class="dd-content">
+          {% for e in exames %}
+            <a href="{% url 'laudo_editor' e.id %}">{{ e.paciente.nome }}</a>
+          {% endfor %}
+        </div>
       </div>
-
-      <div id="editor"></div>
-
-      <div class="actions">
-        <button class="btn-salvar" onclick="salvar()">💾 Salvar</button>
-        <button class="btn-html"   onclick="copiarHTML()">📋 HTML</button>
-        <button class="btn-texto"  onclick="copiarTexto()">📝 Texto</button>
-        <button class="btn-modelo" onclick="modelo()">📑 Modelo</button>
-        <button class="btn-limpar" onclick="limpar()">🧹 Limpar</button>
-        <button class="btn-img"    onclick="abrirImagem()">🖼 Imagem</button>
-        <input type="file" id="fileInput" accept="image/*" style="display:none">
-      </div>
-      {% endif %}
-
     </div>
+
+    <!-- STATUS BAR -->
+    <div class="statusbar">
+      <div>
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status">Não salvo</span>
+      </div>
+      <span id="contador">0 palavras</span>
+    </div>
+
+    <!-- QUILL EDITOR -->
+    <div id="editor"></div>
+
+    <!-- ACTIONS BAR -->
+    <div class="actions-bar">
+      <button onclick="salvar()"      class="tbtn-action btn-salvar">💾 Salvar</button>
+      <button onclick="copiarHTML()"  class="tbtn-action btn-html">📋 HTML</button>
+      <button onclick="copiarTexto()" class="tbtn-action btn-texto">📝 Texto</button>
+      <button onclick="modelo()"      class="tbtn-action btn-modelo">📑 Modelo</button>
+      <button onclick="limpar()"      class="tbtn-action btn-limpar">🧹 Limpar</button>
+      <button onclick="abrirImagem()" class="tbtn-action btn-img">🖼 Imagem</button>
+      <input type="file" id="fileInput" accept="image/*" style="display:none">
+    </div>
+
   </div>
+  {% endif %}
 
-  <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/quill-image-resize-module@3.0.0/image-resize.min.js"></script>
+</div><!-- /app -->
 
-  <script>
-
-  var quill = new Quill('#editor', {
-    theme: 'snow',
-    modules: {
-      toolbar: [
-        ['bold', 'italic', 'underline'],
-        [{ list: 'ordered' }, { list: 'bullet' }],
-        [{ align: [] }],
-        ['clean']
-      ],
-      imageResize: {
-        modules: ['Resize', 'DisplaySize', 'Toolbar']
-      }
-    }
-  });
-
-  quill.on('text-change', function () {
-    let texto = quill.getText();
-    let palavras = texto.trim().split(/\s+/).filter(Boolean);
-    document.getElementById('contador').innerText = palavras.length + " palavras";
-    document.getElementById('status').innerText = "Editando...";
-  });
-
-  function setSize() {
-    let size = document.getElementById('fontSize').value;
-    quill.format('size', size);
-  }
+<!-- ============================================================
+     SCRIPTS
 
 
-async function gerarPDF() {
-    const { jsPDF } = window.jspdf;
-    const doc       = new jsPDF('p', 'mm', 'a4');
-    const pageW     = doc.internal.pageSize.getWidth();
-    const pageH     = doc.internal.pageSize.getHeight();
-    const margin    = 10;
-    const usableW   = pageW - margin * 2;
-    let   currentY  = margin;
+     ============================================================ -->
 
-    const element = document.querySelector('#editor .ql-editor');
-    const canvas  = await html2canvas(element, { scale: 2, useCORS: true });
-    const laudoImg    = canvas.toDataURL('image/jpeg', 0.98);
-    const laudoHeight = (canvas.height * usableW) / canvas.width;
+     
+<script>
 
-    doc.addImage(laudoImg, 'JPEG', margin, currentY, usableW, laudoHeight);
-    currentY += laudoHeight + 5;
-
-    const res  = await fetch('/dicom-para-imagens/{{ exame.id }}/');
-    const data = await res.json();
-
-    for (const imgSrc of data.imagens) {
-      const imgProps = doc.getImageProperties(imgSrc);
-      const imgH     = (imgProps.height * usableW) / imgProps.width;
-
-      if (currentY + imgH > pageH - margin) {
-        doc.addPage();
-        currentY = margin;
-      }
-
-      doc.addImage(imgSrc, 'PNG', margin, currentY, usableW, imgH);
-      currentY += imgH + 5;
-    }
-
-    const pdfBlob = doc.output('blob');
-    const link    = document.createElement('a');
-    link.href     = URL.createObjectURL(pdfBlob);
-    link.download = 'laudo.pdf';
-    link.click();
-
-    const reader = new FileReader();
-    reader.readAsDataURL(pdfBlob);
-    reader.onloadend = function () {
-      fetch('/salvar-pdf/{{ exame.id }}/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: 'pdf_base64=' + encodeURIComponent(reader.result)
-      })
-      .then(() => { document.getElementById('status').innerText = "PDF salvo ✅"; })
-      .catch(() => { document.getElementById('status').innerText = "Erro ao salvar PDF"; });
-    };
-
-    await fetch('/atualizar_status_laudo_editor/{{ exame.id }}/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken')
-      },
-      body: JSON.stringify({ status: 'Laudado' })
-    });
-  }
-  function salvarModelo(){
-    const form = document.getElementById('formNovoModelo');
-    const data = new FormData(form);
-    fetch('/criar_modelos/', {
-        method: 'POST',
-        body: data
-    })
-    .then(() => {
-        return fetch('/listar_modelos/');
-    })
-    .then(r => r.text())
-    .then(html => {
-        document.getElementById('dialogModelos').innerHTML = html;
-    })
-}
-
-
-  function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-      const cookies = document.cookie.split(';');
-      for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].trim();
-        if (cookie.startsWith(name + '=')) {
-          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-          break;
-        }
-      }
-    }
-    return cookieValue;
-  }
-
-  document.getElementById('fileInput').onchange = function () {
-    let file = this.files[0];
-    let reader = new FileReader();
-    reader.onload = function (e) {
-      let range = quill.getSelection(true);
-      quill.insertEmbed(range.index, 'image', e.target.result);
-    };
-    reader.readAsDataURL(file);
-  };
-const iframe = document.querySelector('.viewer iframe');
-
-Split(['#viewer', '.editor'], {
-  sizes: [50, 50],
+/* ---- SPLIT ---- */
+Split(['#lado_esquerdo', '.editor-panel'], {
+  sizes: [44, 56],
   minSize: 300,
-  gutterSize: 8,
-
+  gutterSize: 5,
   onDragStart: () => {
-    iframe.style.pointerEvents = 'none';
+    const iframe = document.querySelector('#viewer_iframe iframe');
+    if (iframe) iframe.style.pointerEvents = 'none';
   },
-
   onDragEnd: () => {
-    iframe.style.pointerEvents = 'auto';
+    const iframe = document.querySelector('#viewer_iframe iframe');
+    if (iframe) iframe.style.pointerEvents = 'auto';
   }
 });
 
+/* ---- TABS ---- */
+function setTab(btn, tipo) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tipo_exame_hidden').value = tipo;
+}
 
-  document.addEventListener('paste', function (e) {
-    let items = e.clipboardData.items;
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].type.indexOf('image') !== -1) {
-        e.preventDefault();
-        let file = items[i].getAsFile();
-        let reader = new FileReader();
-        reader.onload = function (event) {
-          let range = quill.getSelection(true);
-          quill.insertEmbed(range.index, 'image', event.target.result);
-        };
-        reader.readAsDataURL(file);
-      }
+/* ---- TOGGLE VIEW ---- */
+function mostrar(qual) {
+  document.getElementById('laudo_form').style.display    = qual === 'laudo'  ? 'flex'  : 'none';
+  document.getElementById('viewer_iframe').style.display = qual === 'viewer' ? 'block' : 'none';
+}
+mostrar('laudo');
+
+/* ---- PAGO TOGGLE STATUS BADGE ---- */
+document.getElementById('pago-toggle').addEventListener('change', function () {
+  const badge = document.getElementById('status-pago');
+  if (this.checked) {
+    badge.textContent = 'Pago';
+    badge.className = 'badge badge-green';
+  } else {
+    badge.textContent = 'Pendente';
+    badge.className = 'badge badge-accent';
+  }
+});
+
+/* ---- CALC TOTAL ---- */
+function calcTotal() {
+  const valor   = parseFloat(document.getElementById('valor-input').value)   || 0;
+  const repasse = parseFloat(document.getElementById('repasse-input').value) || 0;
+  const total   = Math.max(0, valor - repasse);
+  document.getElementById('total-display').textContent =
+    'R$ ' + total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/* ---- QUILL ---- */
+var quill = new Quill('#editor', {
+  theme: 'snow',
+  placeholder: 'Escreva o laudo aqui...',
+  modules: {
+    toolbar: [
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      [{ align: [] }],
+      [{ header: [1, 2, 3, false] }],
+      ['clean']
+    ],
+    imageResize: { modules: ['Resize', 'DisplaySize', 'Toolbar'] }
+  }
+});
+
+quill.on('text-change', function () {
+  const palavras = quill.getText().trim().split(/\s+/).filter(Boolean).length;
+  document.getElementById('contador').innerText = palavras + ' palavras';
+  setStatus('editing');
+});
+
+function setStatus(state) {
+  const dot  = document.getElementById('status-dot');
+  const text = document.getElementById('status');
+  if (state === 'editing') {
+    dot.className = 'status-dot editing';
+    text.innerText = 'Editando...';
+  } else if (state === 'saved') {
+    dot.className = 'status-dot saved';
+    text.innerText = 'Salvo ✅';
+  } else if (state === 'error') {
+    dot.className = 'status-dot';
+    dot.style.background = 'var(--red)';
+    text.innerText = 'Erro ao salvar';
+  } else {
+    dot.className = 'status-dot';
+    text.innerText = 'Não salvo';
+  }
+}
+
+function setSize() {
+  quill.format('size', document.getElementById('fontSize').value);
+}
+
+/* ---- PDF ---- */
+async function gerarPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc     = new jsPDF('p', 'mm', 'a4');
+  const pageW   = doc.internal.pageSize.getWidth();
+  const pageH   = doc.internal.pageSize.getHeight();
+  const margin  = 10;
+  const usableW = pageW - margin * 2;
+  let   currentY = margin;
+
+  const element  = document.querySelector('#editor .ql-editor');
+  const canvas   = await html2canvas(element, { scale: 2, useCORS: true });
+  const laudoImg = canvas.toDataURL('image/jpeg', 0.98);
+  const laudoH   = (canvas.height * usableW) / canvas.width;
+  doc.addImage(laudoImg, 'JPEG', margin, currentY, usableW, laudoH);
+  currentY += laudoH + 5;
+
+  try {
+    const res  = await fetch('/dicom-para-imagens/{{ exame.id }}/');
+    const data = await res.json();
+    for (const imgSrc of data.imagens) {
+      const props = doc.getImageProperties(imgSrc);
+      const imgH  = (props.height * usableW) / props.width;
+      if (currentY + imgH > pageH - margin) { doc.addPage(); currentY = margin; }
+      doc.addImage(imgSrc, 'PNG', margin, currentY, usableW, imgH);
+      currentY += imgH + 5;
     }
+  } catch(e) { console.warn('Sem imagens DICOM', e); }
+
+  const blob = doc.output('blob');
+  Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob), download: 'laudo.pdf'
+  }).click();
+
+  const reader = new FileReader();
+  reader.readAsDataURL(blob);
+  reader.onloadend = () => {
+    fetch('/salvar-pdf/{{ exame.id }}/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: 'pdf_base64=' + encodeURIComponent(reader.result)
+    }).then(() => setStatus('saved'));
+  };
+
+  await fetch('/atualizar_status_laudo_editor/{{ exame.id }}/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: JSON.stringify({ status: 'Laudado' })
   });
-
-  function copiarHTML()  { navigator.clipboard.writeText(quill.root.innerHTML); }
-  function copiarTexto() { navigator.clipboard.writeText(quill.getText()); }
-
-  function limpar() {
-    quill.setText('');
-    document.getElementById('status').innerText = 'Não salvo';
-  }
-function modelo() {
-    fetch('/listar_modelos/')
-    .then(r => r.text())
-    .then(html => {
-        document.getElementById('dialogModelos').innerHTML = html;
-        document.getElementById('dialogModelos').showModal();
-    })
 }
-function passar_para_editor(nome_modelo,campo2,campo3,campo4,campo5,campo6,campo7,campo8,campo9,campo10,campo11,campo12){
-    quill.root.innerHTML = '<p><strong>Paciente: {{ exame.paciente.nome }}</strong></p>' 
-        + '<p>' + campo2 + '</p>'
-        + '<p>' + campo3 + '</p>'
-        + '<p>' + campo4 + '</p>'
-        + '<p>' + campo5 + '</p>'
-        + '<p>' + campo6 + '</p>'
-        + '<p>' + campo7 + '</p>'
-        + '<p>' + campo8 + '</p>'
-        + '<p>' + campo9 + '</p>'
-        + '<p>' + campo10 + '</p>'
-        + '<p>' + campo11 + '</p>'
-        + '<p>' + campo12 + '</p>';
-    document.getElementById('dialogModelos').close();
+
+/* ---- COOKIE ---- */
+function getCookie(name) {
+  for (const c of (document.cookie || '').split(';')) {
+    const t = c.trim();
+    if (t.startsWith(name + '=')) return decodeURIComponent(t.substring(name.length + 1));
+  }
+  return null;
 }
-  function salvar() {
-    let html = quill.root.innerHTML;
 
-    fetch('/salvar-laudo/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken')
-      },
-      body: JSON.stringify({
-        laudoHTML: html,
-        studyInstanceUid: '{{ exame.study_instance_uid }}'
-      })
-    })
-    .then(r => r.json())
-    .then(data => {
-      document.getElementById('status').innerText = "Salvo ✅";
-      const link = window.location.origin + "/portal/" + data.codigo;
-      document.getElementById('modalCodigo').value = data.codigo;
-      document.getElementById('modalLink').value = link;
-      document.getElementById('modalSalvo').showModal();
-    })
-    .catch(() => {
-      document.getElementById('status').innerText = "Erro ao salvar";
-    });
-  }
+/* ---- FILE INPUT ---- */
+document.getElementById('fileInput').onchange = function () {
+  const r = new FileReader();
+  r.onload = e => quill.insertEmbed(quill.getSelection(true).index, 'image', e.target.result);
+  r.readAsDataURL(this.files[0]);
+};
 
-  function copiarLink() {
-    const input = document.getElementById('modalLink');
-    input.select();
-    navigator.clipboard.writeText(input.value);
-    const btn = document.querySelector('.btn-copiar');
-    btn.innerText = '✅ Copiado!';
-    setTimeout(() => btn.innerText = '📋 Copiar link', 2000);
-  }
-
-  setInterval(function () {
-    if (document.getElementById("status").innerText === "Editando...") {
-      salvarSilencioso();
-    }
-  }, 10000);
-
-  function salvarSilencioso() {
-    let html = quill.root.innerHTML;
-    fetch('/salvar-laudo/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken')
-      },
-      body: JSON.stringify({
-        laudoHTML: html,
-        studyInstanceUid: '{{ exame.study_instance_uid }}'
-      })
-    })
-    .then(r => r.json())
-    .then(() => {
-      document.getElementById('status').innerText = "Salvo ✅";
-    })
-    .catch(() => {
-      document.getElementById('status').innerText = "Erro ao salvar";
-    });
-  }
-
-  document.addEventListener("keydown", function (e) {
-    if (e.ctrlKey && e.key === "s") {
+/* ---- PASTE IMAGE ---- */
+document.addEventListener('paste', e => {
+  for (const item of e.clipboardData.items) {
+    if (item.type.indexOf('image') !== -1) {
       e.preventDefault();
-      salvar();
+      const r = new FileReader();
+      r.onload = ev => quill.insertEmbed(quill.getSelection(true).index, 'image', ev.target.result);
+      r.readAsDataURL(item.getAsFile());
     }
+  }
+});
+
+/* ---- ACTIONS ---- */
+function copiarHTML()  { navigator.clipboard.writeText(quill.root.innerHTML); }
+function copiarTexto() { navigator.clipboard.writeText(quill.getText()); }
+function abrirImagem() { document.getElementById('fileInput').click(); }
+function limpar() { quill.setText(''); setStatus('none'); }
+
+function salvarModelo() {
+  fetch('/criar_modelos/', { method: 'POST', body: new FormData(document.getElementById('formNovoModelo')) })
+  .then(() => fetch('/listar_modelos/')).then(r => r.text())
+  .then(html => { document.getElementById('dialogModelos').innerHTML = html; });
+}
+
+function modelo() {
+  fetch('/listar_modelos/').then(r => r.text()).then(html => {
+    document.getElementById('dialogModelos').innerHTML = html;
+    document.getElementById('dialogModelos').showModal();
   });
+}
 
+function passar_para_editor(n,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12) {
+  quill.root.innerHTML =
+    '<p><strong>Paciente: {{ exame.paciente.nome }}</strong></p>' +
+    [c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12].map(c => `<p>${c}</p>`).join('');
+  document.getElementById('dialogModelos').close();
+}
 
-  </script>
+/* ---- SALVAR ---- */
+function salvar() {
+  fetch('/salvar-laudo/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: JSON.stringify({
+      laudoHTML: quill.root.innerHTML,
+      studyInstanceUid: '{{ exame.study_instance_uid }}'
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    setStatus('saved');
+    document.getElementById('modalCodigo').value = data.codigo;
+    document.getElementById('modalLink').value   = window.location.origin + '/portal/' + data.codigo;
+    document.getElementById('modalSalvo').showModal();
+  })
+  .catch(() => setStatus('error'));
+}
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.key === 's') { e.preventDefault(); salvar(); }
+});
 
-  </body>
-  </html>
+const modelosData = {
+  {% for x in modelos %}
+  "{{ x.id }}": ["{{ x.nome_modelo }}","{{ x.campo2 }}","{{ x.campo3 }}","{{ x.campo4 }}","{{ x.campo5 }}","{{ x.campo6 }}","{{ x.campo7 }}","{{ x.campo8 }}","{{ x.campo9 }}","{{ x.campo10 }}","{{ x.campo11 }}","{{ x.campo12 }}"],
+  {% endfor %}
+};
+
+function aplicarModelo(id) {
+  const m = modelosData[id];
+  if (!m) return;
+  passar_para_editor(...m);
+}
+
+/* ---- COPIAR LINK ---- */
+function copiarLink() {
+  navigator.clipboard.writeText(document.getElementById('modalLink').value);
+  const btn = document.querySelector('#modalSalvo .btn-copiar');
+  const orig = btn.innerText;
+  btn.innerText = '✅ Copiado!';
+  setTimeout(() => btn.innerText = orig, 2000);
+}
+
+/* ---- AUTO-SAVE ---- */
+function salvarSilencioso() {
+  fetch('/salvar-laudo/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: JSON.stringify({
+      laudoHTML: quill.root.innerHTML,
+      studyInstanceUid: '{{ exame.study_instance_uid }}'
+    })
+  })
+  .then(r => r.json())
+  .then(() => setStatus('saved'))
+  .catch(() => setStatus('error'));
+}
+
+setInterval(() => {
+  if (document.getElementById('status').innerText === 'Editando...') salvarSilencioso();
+}, 10000);
+
+/* ---- CTRL+S ---- */
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.key === 's') { e.preventDefault(); salvar(); }
+});
+
+</script>
+</body>
+</html>
