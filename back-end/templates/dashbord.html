@@ -133,6 +133,7 @@
       <h1 class="text-2xl font-semibold text-white">Laudos</h1>
       <p class="text-gray-500 text-sm mt-1">Gerencie e acompanhe os exames</p>
     </div>
+    
 
     <!-- TABS -->
     <div class="flex gap-3 mb-6">
@@ -145,6 +146,9 @@
       <button onclick="trocarTab('laudado')" id="btn-laudado" class="tab-btn tab-laudado">
         ✅ Laudado
       </button>
+  <a href="{% url 'sync_exames' %}" class="tab-btn" style="background:rgba(99,102,241,0.15);color:#818cf8;border:1px solid rgba(99,102,241,0.3);">
+    🔄 Sincronizar
+  </a>
     </div>
 
     <!-- PAINEL AGUARDANDO -->

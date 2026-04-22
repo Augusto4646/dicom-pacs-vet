@@ -39,11 +39,18 @@ path('laudo_editor/<int:exame_id>/', views.laudo_editor, name='laudo_editor'),
     path("baixar/<int:exame_id>/", views.baixar_dicom, name="baixar_dicom"),
     # Listar criar e deletar modelos
     path('listar_modelos/',views.listar_modelos,name='listar_modelos'),
+    path('listar_clinicas/',views.listar_clinicas,name='listar_clinicas'),
+    path('criar_clinica/',views.criar_clinica,name='criar_clinica'),
+    path('deletar_clinica/<int:clinica_id>/', views.deletar_clinica, name='deletar_clinica'),
+    path('editar_clinica/<int:clinica_id>/', views.editar_clinica, name='editar_clinica'),
+
     path('criar_modelos/',views.criar_modelos,name='criar_modelos'),
     path('atualizar_status/<int:exame_id>/',views.atualizar_status),
     path('atualizar_status_laudo_editor/<int:exame_id>/', views.atualizar_status_laudo_editor),
     path('dashboard_visual/',views.dashboard_visual,name='dashboard_visual'),
     path('editar_cabecalho/<int:exame_id>/', views.editar_cabecalho, name='editar_cabecalho'),
     path('pagina_laudos/',views.pagina_laudos,name='pagina_laudos'),
+    path('listar_veterinarios/', views.listar_veterinarios,name='listar_veterinarios'),
+    path('criar_veterinario/', views.criar_veterinario,name='criar_veterinario')
 
 ]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

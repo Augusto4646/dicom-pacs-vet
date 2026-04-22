@@ -624,7 +624,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .status-dot.saved   { background: var(--green); }
 
 /* ---- QUILL EDITOR ---- */
-#editor { flex: 1; overflow: hidden; background: var(--bg); }
+#editor { flex: 10;  min-height: 0;  overflow: hidden; background: var(--bg); }
 
 .ql-toolbar.ql-snow {
   background: var(--surface2) !important;
@@ -655,9 +655,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .ql-editor {
   font-size: 15px;
   max-width: 820px;
-  margin: auto;
+  padding-left: 0;
   color: var(--text);
-  padding: 20px 24px;
+  padding: 20px 1px; /* pode ajustar */
 }
 .ql-editor p { color: var(--text); }
 .ql-editor img { max-width: 100%; height: auto; border-radius: var(--radius-sm); }
@@ -800,10 +800,7 @@ dialog h3 {
 <!-- ============================================================
      TOGGLE BAR
      ============================================================ -->
-<div class="toggle-bar">
-  <button class="tbtn tbtn-laudo"  onclick="mostrar('laudo')">📋 Laudo</button>
-  <button class="tbtn tbtn-viewer" onclick="mostrar('viewer')">🖼 Viewer</button>
-</div>
+
 
 <!-- ============================================================
      MODAL: LAUDO SALVO
@@ -867,30 +864,31 @@ dialog h3 {
             <div class="field-group">
               <div class="field-label">
                 Clínica
-                <button type="button" class="add-btn" title="Adicionar clínica">+</button>
+                <button onclick="abrirClinica()" type="button" class="add-btn">+</button>
                 <button type="button" class="edit-btn" title="Editar">✏</button>
                 <div class="info-icon" title="Informações">i</div>
               </div>
               <div class="select-wrap">
-                <select name="clinica">
-                  <option value="">Selecionar..</option>
+<select name="clinica">
+  <option value="">Selecionar..</option>
+  {% for c in clinicas %}
+    <option value="{{ c.id }}">{{ c.nome_clinica }}</option>
+  {% endfor %}
+</select>                  
                 </select>
               </div>
             </div>
             <div class="field-group">
               <div class="field-label">
                 Veterinário
-                <button type="button" class="add-btn" title="Adicionar">+</button>
+                <button onclick="abrirVeterinario()" type="button" class="add-btn">+</button>
                 <button type="button" class="edit-btn" title="Editar">✏</button>
               </div>
               <div class="select-wrap">
-<select name="veterinario">
-  <option value="">Selecionar..</option>
-  {% for membro in membros %}
-    <option value="{{ membro.id }}" 
-      {% if membro.user == request.user %}selected{% endif %}>
-      {{ membro.user.username }}
-    </option>
+<select name="veterinario_pedidor" id="select-vet-pedidor">
+  <option value="">Selecionar...</option>
+  {% for v in veterinarios %}
+    <option value="{{ v.id }}" {% if exame.veterinario_pedidor == v.nome %}selected{% endif %}>{{ v.nome }}</option>
   {% endfor %}
 </select>
               </div>
@@ -1036,7 +1034,6 @@ dialog h3 {
   <!-- ============================================================
        RIGHT EDITOR PANEL
        ============================================================ -->
-  {% if request.user.usuario.papel == 'V' %}
   <div class="editor-panel">
 
     <!-- TOPBAR -->
@@ -1052,6 +1049,9 @@ dialog h3 {
       </select>
       <button onclick="setSize()" class="tbtn-action btn-neutro">🔠</button>
       <button onclick="gerarPDF()" class="tbtn-action btn-pdf">📄 PDF</button>
+    <button class="tbtn tbtn-laudo"  onclick="mostrar('laudo')">📋 Laudo</button>
+  <button class="tbtn tbtn-viewer" onclick="mostrar('viewer')">🖼 Viewer</button>
+
       <span class="codigo-badge">{{ exame.codigo_acesso }}</span>
       <div class="spacer"></div>
       <div class="dd-wrap" onclick="this.querySelector('.dd-content').classList.toggle('open')">
@@ -1088,7 +1088,6 @@ dialog h3 {
     </div>
 
   </div>
-  {% endif %}
 
 </div><!-- /app -->
 
@@ -1128,7 +1127,7 @@ function mostrar(qual) {
   document.getElementById('laudo_form').style.display    = qual === 'laudo'  ? 'flex'  : 'none';
   document.getElementById('viewer_iframe').style.display = qual === 'viewer' ? 'block' : 'none';
 }
-mostrar('laudo');
+mostrar('viewer');
 
 /* ---- PAGO TOGGLE STATUS BADGE ---- */
 document.getElementById('pago-toggle').addEventListener('change', function () {
@@ -1154,7 +1153,6 @@ function calcTotal() {
 /* ---- QUILL ---- */
 var quill = new Quill('#editor', {
   theme: 'snow',
-  placeholder: 'Escreva o laudo aqui...',
   modules: {
     toolbar: [
       ['bold', 'italic', 'underline', 'strike'],
@@ -1292,9 +1290,19 @@ function salvarModelo() {
   .then(() => fetch('/listar_modelos/')).then(r => r.text())
   .then(html => { document.getElementById('dialogModelos').innerHTML = html; });
 }
-
+function salvarClinica() {
+  fetch('/criar_clinica/', { method: 'POST', body: new FormData(document.getElementById('formNovaClinica')) })
+  .then(() => fetch('/listar_clinicas/')).then(r => r.text())
+  .then(html => { document.getElementById('dialogModelos').innerHTML = html; });
+}
 function modelo() {
   fetch('/listar_modelos/').then(r => r.text()).then(html => {
+    document.getElementById('dialogModelos').innerHTML = html;
+    document.getElementById('dialogModelos').showModal();
+  });
+}
+function abrirClinica() {
+  fetch('/listar_clinicas/').then(r => r.text()).then(html => {
     document.getElementById('dialogModelos').innerHTML = html;
     document.getElementById('dialogModelos').showModal();
   });
@@ -1380,7 +1388,27 @@ setInterval(() => {
 document.addEventListener('keydown', e => {
   if (e.ctrlKey && e.key === 's') { e.preventDefault(); salvar(); }
 });
-
+function abrirVeterinario() {
+  fetch('/listar_veterinarios/').then(r => r.text()).then(html => {
+    document.getElementById('dialogModelos').innerHTML = html;
+    document.getElementById('dialogModelos').showModal();
+  });
+}
+function salvarVeterinario() {
+  fetch('/criar_veterinario/', { method: 'POST', body: new FormData(document.getElementById('formNovoVet')) })
+  .then(r => r.text())
+  .then(html => { document.getElementById('dialogModelos').innerHTML = html; });
+}
+function selecionarVeterinario(id, nome) {
+  const sel = document.getElementById('select-vet-pedidor');
+  // Adiciona a option se não existir
+  if (!sel.querySelector(`option[value="${id}"]`)) {
+    const opt = new Option(nome, id);
+    sel.add(opt);
+  }
+  sel.value = id;
+  document.getElementById('dialogModelos').close();
+}
 </script>
 </body>
 </html>

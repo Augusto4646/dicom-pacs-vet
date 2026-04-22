@@ -56,16 +56,22 @@ class Financeiro(models.Model):
 
 
 class Clinica(models.Model):
-    nome = models.CharField(max_length=100, blank=True, null=True)
+    nome_clinica = models.CharField(max_length=100, blank=True, null=True)
+    whats_clinica= models.CharField(max_length=100, blank=True, null=True)
+    usuario_logado = models.ForeignKey(Usuario, on_delete=models.CASCADE,null=True)
 
     def __str__(self):
-        return self.nome or "Clinica"
+        return self.nome_clinica or "Clinica"
+class VeterinarioPedidor(models.Model):
+    nome = models.CharField(max_length=255)
+    def __str__(self): return self.nome
 
 class Exame(models.Model):
     codigo_acesso = models.CharField(max_length=255, null=True, blank=True)
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE)
     financeiro = models.ForeignKey(Financeiro, on_delete=models.CASCADE,null=True)
     modelo=models.ForeignKey("Modelo", on_delete=models.CASCADE,null=True)
+    veterinario_pedidor=models.ForeignKey(VeterinarioPedidor, on_delete=models.CASCADE,null=True)
     PAPEL_ESCOLHAS_STATUS = [
         ("Laudado", "Laudado"),
         ("Aguardando", "Aguardando"),

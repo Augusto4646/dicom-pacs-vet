@@ -10,7 +10,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.core.files.base import ContentFile
 from django.template.loader import render_to_string
 from rest_framework import viewsets
-from .models import Usuario, Exame,Modelo,Laudo,Paciente,Instituicao,Financeiro
+from .models import Usuario, Exame,Modelo,Laudo,Paciente,Instituicao,Financeiro,Clinica,VeterinarioPedidor
 from .serializers import ExameSerializer
 from .util import gerar_codigo_unico
 from base.services.orthanc_sync import sincronizar_estudos
@@ -72,27 +72,42 @@ def dashbord(request):
 from django.db.models import Sum
 
 @login_required
+@login_required
 def menu(request):
     usuario, _ = Usuario.objects.get_or_create(user=request.user)
-
     inst = usuario.instituicao_pertencente
+    exames = Exame.objects.filter(instituicao__in=usuario.instituicoes.all()).order_by('-id')
 
     financeiros = Financeiro.objects.filter(instituicao=inst)
+    a_receber = financeiros.filter(pago=False).aggregate(t=Sum('valor'))['t'] or 0
+    recebido  = financeiros.filter(pago=True).aggregate(t=Sum('valor'))['t'] or 0
+    despesa   = financeiros.aggregate(t=Sum('despesa'))['t'] or 0
+    saldo_liquido = recebido - despesa
 
-    recebido = financeiros.filter(pago=True)
-
-    a_receber = financeiros.filter(pago=False)
-
-
-    saldo_liquido = recebido
+    total_aguardando = exames.filter(status='Aguardando').count()
+    total_urgente    = exames.filter(status='Urgente').count()
+    total_laudado    = exames.filter(status='Laudado').count()
+    clinicas_devedoras = (
+    Financeiro.objects
+    .filter(pago=False, clinica__isnull=False)
+    .values('clinica__nome_clinica', 'clinica__id')
+    .annotate(total=Sum('valor'))
+    .order_by('-total')
+    )
 
     return render(request, "menu.html", {
-        "recebido": recebido,
         "a_receber": a_receber,
+        "recebido": recebido,
+        "despesa": despesa,
         "saldo_liquido": saldo_liquido,
+        "exames_recentes": exames[:5],
+        "total_aguardando": total_aguardando,
+        "total_urgente": total_urgente,
+        "total_laudado": total_laudado,
+        "total_exames": exames.count(),
+        "clinicas_devedoras": clinicas_devedoras,
+
     })
-
-
 # ---------------------------------------------------------------------------
 # Home / Login
 # ---------------------------------------------------------------------------
@@ -323,7 +338,39 @@ def criar_modelos(request):
         )
         modelos = Modelo.objects.filter(usuario_logado=usuario)
         return redirect('/listar_modelos/')
+def listar_clinicas(request):
+    usuario, _ = Usuario.objects.get_or_create(user=request.user)
+    inst = usuario.instituicao_pertencente
+    clinicas = Clinica.objects.all()
+    return render(request, "pagina_clinicas.html", {"clinicas": clinicas})
 
+
+def criar_clinica(request):
+    if request.method == "POST":
+        usuario, created = Usuario.objects.get_or_create(user=request.user)
+        Clinica.objects.create(
+            usuario_logado=usuario,
+            nome_clinica=request.POST.get("nome_clinica"),
+            whats_clinica=request.POST.get("whats_clinica"),
+        )
+        clinicas = Clinica.objects.filter(usuario_logado=usuario)
+        return render(request, "pagina_clinicas.html", {"clinicas": clinicas})
+
+
+def deletar_clinica(request, clinica_id):
+    clinica = get_object_or_404(Clinica, id=clinica_id)
+    clinica.delete()
+    return redirect('/listar_clinicas/')
+
+
+def editar_clinica(request, clinica_id):
+    clinica = get_object_or_404(Clinica, id=clinica_id)
+    if request.method == "POST":
+        clinica.nome_clinica = request.POST.get("nome_clinica")
+        clinica.whats_clinica = request.POST.get("whats_clinica")
+        clinica.save()
+        return redirect('/listar_clinicas/')
+    return render(request, "editar_clinica.html", {"clinica": clinica})
 @login_required
 def laudo_editor(request, exame_id):
     usuario, created = Usuario.objects.get_or_create(user=request.user)
@@ -331,31 +378,57 @@ def laudo_editor(request, exame_id):
     exames = Exame.objects.filter(instituicao__in=usuario.instituicoes.all())
     membros = exame.instituicao.membros_insituticao.all() if exame.instituicao else []
     modelos = Modelo.objects.filter(usuario_logado=usuario)
+    clinicas = Clinica.objects.filter(usuario_logado=usuario)
+    vets = VeterinarioPedidor.objects.all()
 
     if request.method == 'POST':
-        veterinario_id = request.POST.get("veterinario")
-        if veterinario_id:
-            exame.usuario_dicom = Usuario.objects.get(id=veterinario_id)
+        vet_id = request.POST.get("veterinario_pedidor")
+        if vet_id:
+            exame.veterinario_pedidor_id = vet_id
 
         exame.tipo_exame = request.POST.get("tipo_exame")
-
         if not exame.codigo_acesso:
             exame.codigo_acesso = exame._gerar_codigo()
-
         exame.save()
 
         exame.paciente.nome = request.POST.get("Paciente")
         exame.paciente.nome_tutor = request.POST.get("Tutor")
         exame.paciente.save()
 
-        if exame.financeiro:
-            exame.financeiro.pago = request.POST.get("pago") == "on"
-            exame.financeiro.valor = request.POST.get("valor") or 0
-            exame.financeiro.valor_repasse_a_clinica = request.POST.get("repasse") or 0
-            exame.financeiro.save()
+        valor = request.POST.get("valor") or 0
+        repasse = request.POST.get("repasse") or 0
+        pago = request.POST.get("pago") == "on"
+        forma = request.POST.get("forma_pagamento") or ""
+        clinica_id = request.POST.get("clinica") or None
 
-    return render(request, "laudo_editor.html", {"exame": exame, "exames": exames, "membros": membros, "modelos": modelos}) 
-# ---------------------------------------------------------------------------
+        if exame.financeiro:
+            exame.financeiro.pago = pago
+            exame.financeiro.valor = valor
+            exame.financeiro.valor_repasse_a_clinica = repasse
+            exame.financeiro.forma_pagamento = forma
+            if clinica_id:
+                exame.financeiro.clinica_id = clinica_id
+            exame.financeiro.save()
+        elif exame.instituicao:
+            financeiro = Financeiro.objects.create(
+                instituicao=exame.instituicao,
+                pago=pago,
+                valor=valor,
+                valor_repasse_a_clinica=repasse,
+                forma_pagamento=forma,
+                clinica_id=clinica_id,
+            )
+            exame.financeiro = financeiro
+            exame.save()
+
+    return render(request, "laudo_editor.html", {
+        "exame": exame,
+        "exames": exames,
+        "membros": membros,
+        "modelos": modelos,
+        "clinicas": clinicas,
+        "veterinarios": vets,
+    })# ---------------------------------------------------------------------------
 # deletar modelo
 # --------------------------------------------------------------------------
 
@@ -405,3 +478,13 @@ def editar_cabecalho(request,exame_id):
     return JsonResponse({"status": "ok"})
 
         
+
+def listar_veterinarios(request):
+    vets = VeterinarioPedidor.objects.all()
+    return render(request, "pagina_veterinarios.html", {"veterinarios": vets})
+
+def criar_veterinario(request):
+    if request.method == "POST":
+        VeterinarioPedidor.objects.create(nome=request.POST.get("nome"))
+        vets = VeterinarioPedidor.objects.all()
+        return render(request, "pagina_veterinarios.html", {"veterinarios": vets})

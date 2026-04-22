@@ -51,6 +51,7 @@
 
 <div class="painel">
   <button onclick="document.getElementById('formCriar').style.display='block'">💾 Criar novo</button>
+  <button onclick="document.getElementById('dialogModelos').close()" style="background:#e74c3c;float:right;">✕ Fechar</button>
 
   {% for modelo in modelos %}
   <div onclick="passar_para_editor(

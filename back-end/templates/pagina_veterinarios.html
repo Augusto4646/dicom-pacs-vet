@@ -1,0 +1,19 @@
+<div class="painel">
+  <button onclick="document.getElementById('dialogModelos').close()" style="background:#e74c3c;float:right;">✕ Fechar</button>
+
+  <button onclick="document.getElementById('formCriar').style.display='block'">💾 Adicionar Veterinário</button>
+
+  <div id="formCriar" style="display:none">
+    <form id="formNovoVet">
+      {% csrf_token %}
+      <textarea name="nome" placeholder="Nome do veterinário"></textarea>
+      <button type="button" onclick="salvarVeterinario()">Salvar</button>
+    </form>
+  </div>
+
+  {% for v in veterinarios %}
+  <div onclick="selecionarVeterinario('{{ v.id }}', '{{ v.nome }}')" style="padding:10px 14px;border:1px solid #ddd;border-radius:6px;margin-bottom:8px;cursor:pointer;background:#f9f9f9;">
+    {{ v.nome }}
+  </div>
+  {% endfor %}
+</div>
