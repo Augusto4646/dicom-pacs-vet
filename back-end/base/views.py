@@ -338,12 +338,19 @@ def criar_modelos(request):
         )
         modelos = Modelo.objects.filter(usuario_logado=usuario)
         return redirect('/listar_modelos/')
+
+def deletar_modelo(request, modelo_id):
+    modelo = get_object_or_404(Modelo, id=modelo_id)
+    modelo.delete()
+    return redirect('/listar_modelos/')
+
 def listar_clinicas(request):
     usuario, _ = Usuario.objects.get_or_create(user=request.user)
     inst = usuario.instituicao_pertencente
     clinicas = Clinica.objects.all()
     return render(request, "pagina_clinicas.html", {"clinicas": clinicas})
 
+ 
 
 def criar_clinica(request):
     if request.method == "POST":
@@ -362,6 +369,8 @@ def deletar_clinica(request, clinica_id):
     clinica.delete()
     return redirect('/listar_clinicas/')
 
+ 
+
 
 def editar_clinica(request, clinica_id):
     clinica = get_object_or_404(Clinica, id=clinica_id)
@@ -371,6 +380,7 @@ def editar_clinica(request, clinica_id):
         clinica.save()
         return redirect('/listar_clinicas/')
     return render(request, "editar_clinica.html", {"clinica": clinica})
+
 @login_required
 def laudo_editor(request, exame_id):
     usuario, created = Usuario.objects.get_or_create(user=request.user)
@@ -477,7 +487,6 @@ def editar_cabecalho(request,exame_id):
         
     return JsonResponse({"status": "ok"})
 
-        
 
 def listar_veterinarios(request):
     vets = VeterinarioPedidor.objects.all()
@@ -488,3 +497,8 @@ def criar_veterinario(request):
         VeterinarioPedidor.objects.create(nome=request.POST.get("nome"))
         vets = VeterinarioPedidor.objects.all()
         return render(request, "pagina_veterinarios.html", {"veterinarios": vets})
+
+def deletar_veterinario(request, veterinario_id):
+    veterinario = get_object_or_404(VeterinarioPedidor, id=veterinario_id)
+    veterinario.delete()  
+    return redirect('/listar_veterinarios/')

@@ -53,22 +53,14 @@
   <button onclick="document.getElementById('formCriar').style.display='block'">💾 Criar novo</button>
   <button onclick="document.getElementById('dialogModelos').close()" style="background:#e74c3c;float:right;">✕ Fechar</button>
 
-  {% for modelo in modelos %}
-  <div onclick="passar_para_editor(
-      '{{ modelo.nome_modelo }}',
-      '{{ modelo.campo2 }}',
-      '{{ modelo.campo3 }}',
-      '{{ modelo.campo4 }}',
-      '{{ modelo.campo5 }}',
-      '{{ modelo.campo6 }}',
-      '{{ modelo.campo7 }}',
-      '{{ modelo.campo8 }}',
-      '{{ modelo.campo9 }}',
-      '{{ modelo.campo10 }}',
-      '{{ modelo.campo11 }}',
-      '{{ modelo.campo12 }}'
-  )">{{ modelo.nome_modelo }}</div>
-  {% endfor %}
+{% for modelo in modelos %}
+<div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border:1px solid #ddd; border-radius:6px; margin-bottom:8px; background:#f9f9f9;">
+  <span onclick="passar_para_editor('{{ modelo.nome_modelo }}','{{ modelo.campo2 }}','{{ modelo.campo3 }}','{{ modelo.campo4 }}','{{ modelo.campo5 }}','{{ modelo.campo6 }}','{{ modelo.campo7 }}','{{ modelo.campo8 }}','{{ modelo.campo9 }}','{{ modelo.campo10 }}','{{ modelo.campo11 }}','{{ modelo.campo12 }}')">
+    {{ modelo.nome_modelo }}
+  </span>
+  <a href="/deletar_modelo/{{ modelo.id }}/" style="color:#e74c3c; font-weight:bold; text-decoration:none; padding: 0 6px;">−</a>
+</div>
+{% endfor %}
 
   <div id="formCriar" style="display:none">
     <form id="formNovoModelo">

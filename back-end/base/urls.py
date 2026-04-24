@@ -51,6 +51,8 @@ path('laudo_editor/<int:exame_id>/', views.laudo_editor, name='laudo_editor'),
     path('editar_cabecalho/<int:exame_id>/', views.editar_cabecalho, name='editar_cabecalho'),
     path('pagina_laudos/',views.pagina_laudos,name='pagina_laudos'),
     path('listar_veterinarios/', views.listar_veterinarios,name='listar_veterinarios'),
-    path('criar_veterinario/', views.criar_veterinario,name='criar_veterinario')
-
+    path('criar_veterinario/', views.criar_veterinario,name='criar_veterinario'),
+    path('deletar_modelo/<int:modelo_id>/', views.deletar_modelo),
+    path('deletar_clinica/<int:clinica_id/',views.deletar_clinica),
+    path('deletar_veterinario/<int:veterinario_id>/',views.deletar_veterinario),   
 ]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

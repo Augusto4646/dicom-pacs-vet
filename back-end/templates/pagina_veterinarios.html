@@ -15,5 +15,5 @@
   <div onclick="selecionarVeterinario('{{ v.id }}', '{{ v.nome }}')" style="padding:10px 14px;border:1px solid #ddd;border-radius:6px;margin-bottom:8px;cursor:pointer;background:#f9f9f9;">
     {{ v.nome }}
   </div>
-  {% endfor %}
+<a href="/deletar_veterinario/{{ v.id }}/" style="color:#e74c3c; font-weight:bold; text-decoration:none; padding: 0 6px;">−</a>  {% endfor %}
 </div>
