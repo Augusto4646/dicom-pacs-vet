@@ -168,6 +168,7 @@
                       <a href="{% url 'laudo_editor' exame.id %}" class="btn btn-xs btn-primary">Abrir</a>
                       <a href="http://vizionvet.com.br/orthanc/ui/app/#/#study?uuid={{ exame.orthanc_id }}" target="_blank" class="btn btn-xs btn-error">DICOM</a>
                       <a href="{% url 'baixar_dicom' exame.id %}" class="btn btn-xs btn-warning">Baixar</a>
+                      <a href="{% url 'deletar_exame' exame.id %}" class="btn btn-xs  btn-error">Excluir</a>                    
                     </td>
                   </tr>
                 {% endif %}
@@ -193,7 +194,9 @@
                     <td>{{ exame.study_date }}</td>
                     <td class="flex gap-1">
                       <a href="{% url 'laudo_editor' exame.id %}" class="btn btn-xs btn-primary">Abrir</a>
-                      <a href="http://vizionvet.com.br/orthanc/ui/app/#/#study?uuid={{ exame.orthanc_id }}" target="_blank" class="btn btn-xs btn-error">Editar</a>
+                      <a href="http://vizionvet.com.br/orthanc/ui/app/#/#study?uuid={{ exame.orthanc_id }}" target="_blank" class="btn btn-xs btn-error">DICOM</a>
+                      <a href="{% url 'baixar_dicom' exame.id %}" class="btn btn-xs btn-warning">Baixar</a>
+                      <a href="{% url 'deletar_exame' exame.id %}" class="btn btn-xs  btn-error">Excluir</a>                    
                     </td>
                   </tr>
                 {% endif %}
@@ -220,6 +223,8 @@
                     <td class="flex gap-1">
                       <a href="{% url 'laudo_editor' exame.id %}" class="btn btn-xs btn-primary">Abrir</a>
                       <a href="http://vizionvet.com.br/orthanc/ui/app/#/#study?uuid={{ exame.orthanc_id }}" target="_blank" class="btn btn-xs btn-error">DICOM</a>
+                      <a href="{% url 'baixar_dicom' exame.id %}" class="btn btn-xs btn-warning">Baixar</a>
+                      <a href="{% url 'deletar_exame' exame.id %}" class="btn btn-xs  btn-error">Excluir</a>                    
                     </td>
                   </tr>
                 {% endif %}

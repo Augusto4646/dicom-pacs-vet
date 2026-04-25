@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -132,7 +131,7 @@ body {
 .tabs {
   display: flex;
   padding: 12px 14px 0;
-  gap: 25px;
+  gap: 3px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
@@ -796,46 +795,7 @@ dialog h3 {
 </head>
 
 <body>
-
-<!-- ============================================================
-     TOGGLE BAR
-     ============================================================ -->
-
-
-<!-- ============================================================
-     MODAL: LAUDO SALVO
-     ============================================================ -->
-<dialog id="modalSalvo">
-  <h3>✅ Laudo salvo com sucesso!</h3>
-  <div class="modal-row">
-    <label>Código de acesso</label>
-    <input id="modalCodigo" type="text" readonly>
-  </div>
-  <div class="modal-row">
-    <label>Link para o paciente</label>
-    <input id="modalLink" type="text" readonly>
-  </div>
-  <div class="modal-actions">
-    <button class="tbtn-action btn-copiar" onclick="copiarLink()">📋 Copiar link</button>
-    <button class="tbtn-action btn-fechar" onclick="document.getElementById('modalSalvo').close()">Fechar</button>
-  </div>
-</dialog>
-
-
-
-
-<!-- Modal de modelos de laudo -->
-<dialog id="dialogModelos"></dialog>
-
-<!-- ============================================================
-     APP
-     ============================================================ -->
-<div class="app">
-
-  <!-- ============================================================
-       LEFT PANEL
-       ============================================================ -->
-  <div id="lado_esquerdo">
+     <div id="lado_esquerdo">
 
     <!-- FORM VIEW -->
     <div id="laudo_form">
@@ -850,7 +810,7 @@ dialog h3 {
         <button class="tab-btn" onclick="setTab(this,'ecocardiograma')">ECOCARDIOGRAMA</button>
         <button class="tab-btn" onclick="setTab(this,'procedimentos')">PROCEDIMENTOS</button>
         <button class="tab-btn" onclick="setTab(this,'radiografia')">RADIOGRAFIA  </button>
-      </div>
+       </div>
 
       <!-- FORM BODY -->
       <div class="form-body">
@@ -1028,8 +988,10 @@ dialog h3 {
       </div>
 
     </div><!-- /laudo_form -->
-    
+
     <!-- VIEWER VIEW -->
+    <div id="viewer_iframe">
+            <!-- VIEWER VIEW -->
     <div id="viewer_iframe">
         <div class="tabs">
         <button class="tab-btn"  onclick="mostrar('laudo')">📋 Laudo</button>
@@ -1049,385 +1011,9 @@ dialog h3 {
     </div>
 
   </div><!-- /lado_esquerdo -->
-
-  <!-- ============================================================
-       RIGHT EDITOR PANEL
-       ============================================================ -->
-  <div class="editor-panel">
-
-    <!-- TOPBAR -->
-    <div class="editor-topbar">
-      <span class="topbar-label">Tamanho</span>
-      <select id="fontSize" class="topbar-select">
-        <option value="12px">12</option>
-        <option value="14px">14</option>
-        <option value="16px" selected>16</option>
-        <option value="18px">18</option>
-        <option value="24px">24</option>
-        <option value="32px">32</option>
-      </select>
-      <button onclick="setSize()" class="tbtn-action btn-neutro">🔠</button>
-      <button onclick="gerarPDF()" class="tbtn-action btn-pdf">📄 PDF</button>
-      <span class="codigo-badge">{{ exame.codigo_acesso }}</span>
-      <div class="spacer"></div>
-      <div class="dd-wrap" onclick="this.querySelector('.dd-content').classList.toggle('open')">
-        <button class="tbtn-action btn-copiar">{{ exame.paciente.nome }} ▾</button>
-        <div class="dd-content">
-          {% for e in exames %}
-            <a href="{% url 'laudo_editor' e.id %}">{{ e.paciente.nome }}</a>
-          {% endfor %}
-        </div>
-      </div>
-    </div>
-
-    <!-- STATUS BAR -->
-    <div class="statusbar">
-      <div>
-        <span class="status-dot" id="status-dot"></span>
-        <span id="status">Não salvo</span>
-      </div>
-      <span id="contador">0 palavras</span>
-    </div>
-
-    <!-- QUILL EDITOR -->
-    <div id="editor"></div>
-
-    <!-- ACTIONS BAR -->
-    <div class="actions-bar">
-      <button onclick="salvar()"      class="tbtn-action btn-salvar">💾 Salvar</button>
-      <button onclick="copiarHTML()"  class="tbtn-action btn-html">📋 HTML</button>
-      <button onclick="copiarTexto()" class="tbtn-action btn-texto">📝 Texto</button>
-      <button onclick="modelo()"      class="tbtn-action btn-modelo">📑 Modelo</button>
-      <button onclick="limpar()"      class="tbtn-action btn-limpar">🧹 Limpar</button>
-      <button onclick="abrirImagem()" class="tbtn-action btn-img">🖼 Imagem</button>
-      <input type="file" id="fileInput" accept="image/*" style="display:none">
+      <iframe src="/viewer/viewer/dicomweb?StudyInstanceUIDs={{ exame.study_instance_uid }}"></iframe>
     </div>
 
   </div>
-
-</div><!-- /app -->
-
-<!-- ============================================================
-     SCRIPTS
-
-
-     ============================================================ -->
-
-     
-<script>
-
-/* ---- SPLIT ---- */
-Split(['#lado_esquerdo', '.editor-panel'], {
-  sizes: [44, 56],
-  minSize: 300,
-  gutterSize: 5,
-  onDragStart: () => {
-    const iframe = document.querySelector('#viewer_iframe iframe');
-    if (iframe) iframe.style.pointerEvents = 'none';
-  },
-  onDragEnd: () => {
-    const iframe = document.querySelector('#viewer_iframe iframe');
-    if (iframe) iframe.style.pointerEvents = 'auto';
-  }
-});
-
-/* ---- TABS ---- */
-function setTab(btn, tipo) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('tipo_exame_hidden').value = tipo;
-}
-
-/* ---- TOGGLE VIEW ---- */
-function mostrar(qual) {
-  document.getElementById('laudo_form').style.display    = qual === 'laudo'  ? 'flex'  : 'none';
-  document.getElementById('viewer_iframe').style.display = qual === 'viewer' ? 'block' : 'none';
-}
-mostrar('viewer');
-
-/* ---- PAGO TOGGLE STATUS BADGE ---- */
-document.getElementById('pago-toggle').addEventListener('change', function () {
-  const badge = document.getElementById('status-pago');
-  if (this.checked) {
-    badge.textContent = 'Pago';
-    badge.className = 'badge badge-green';
-  } else {
-    badge.textContent = 'Pendente';
-    badge.className = 'badge badge-accent';
-  }
-});
-
-/* ---- CALC TOTAL ---- */
-function calcTotal() {
-  const valor   = parseFloat(document.getElementById('valor-input').value)   || 0;
-  const repasse = parseFloat(document.getElementById('repasse-input').value) || 0;
-  const total   = Math.max(0, valor - repasse);
-  document.getElementById('total-display').textContent =
-    'R$ ' + total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-/* ---- QUILL ---- */
-var quill = new Quill('#editor', {
-  theme: 'snow',
-  modules: {
-    toolbar: [
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ list: 'ordered' }, { list: 'bullet' }],
-      [{ align: [] }],
-      [{ header: [1, 2, 3, false] }],
-      ['clean']
-    ],
-    imageResize: { modules: ['Resize', 'DisplaySize', 'Toolbar'] }
-  }
-});
-
-quill.on('text-change', function () {
-  const palavras = quill.getText().trim().split(/\s+/).filter(Boolean).length;
-  document.getElementById('contador').innerText = palavras + ' palavras';
-  setStatus('editing');
-});
-
-function setStatus(state) {
-  const dot  = document.getElementById('status-dot');
-  const text = document.getElementById('status');
-  if (state === 'editing') {
-    dot.className = 'status-dot editing';
-    text.innerText = 'Editando...';
-  } else if (state === 'saved') {
-    dot.className = 'status-dot saved';
-    text.innerText = 'Salvo ✅';
-  } else if (state === 'error') {
-    dot.className = 'status-dot';
-    dot.style.background = 'var(--red)';
-    text.innerText = 'Erro ao salvar';
-  } else {
-    dot.className = 'status-dot';
-    text.innerText = 'Não salvo';
-  }
-}
-
-function setSize() {
-  quill.format('size', document.getElementById('fontSize').value);
-}
-
-/* ---- PDF ---- */
-async function gerarPDF() {
-  const { jsPDF } = window.jspdf;
-  const doc     = new jsPDF('p', 'mm', 'a4');
-  const pageW   = doc.internal.pageSize.getWidth();
-  const pageH   = doc.internal.pageSize.getHeight();
-  const margin  = 10;
-  const usableW = pageW - margin * 2;
-  let   currentY = margin;
-
-  const element  = document.querySelector('#editor .ql-editor');
-  const canvas   = await html2canvas(element, { scale: 2, useCORS: true });
-  const laudoImg = canvas.toDataURL('image/jpeg', 0.98);
-  const laudoH   = (canvas.height * usableW) / canvas.width;
-  doc.addImage(laudoImg, 'JPEG', margin, currentY, usableW, laudoH);
-  currentY += laudoH + 5;
-
-  try {
-    const res  = await fetch('/dicom-para-imagens/{{ exame.id }}/');
-    const data = await res.json();
-    for (const imgSrc of data.imagens) {
-      const props = doc.getImageProperties(imgSrc);
-      const imgH  = (props.height * usableW) / props.width;
-      if (currentY + imgH > pageH - margin) { doc.addPage(); currentY = margin; }
-      doc.addImage(imgSrc, 'PNG', margin, currentY, usableW, imgH);
-      currentY += imgH + 5;
-    }
-  } catch(e) { console.warn('Sem imagens DICOM', e); }
-
-  const blob = doc.output('blob');
-  Object.assign(document.createElement('a'), {
-    href: URL.createObjectURL(blob), download: 'laudo.pdf'
-  }).click();
-
-  const reader = new FileReader();
-  reader.readAsDataURL(blob);
-  reader.onloadend = () => {
-    fetch('/salvar-pdf/{{ exame.id }}/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'X-CSRFToken': getCookie('csrftoken')
-      },
-      body: 'pdf_base64=' + encodeURIComponent(reader.result)
-    }).then(() => setStatus('saved'));
-  };
-
-  await fetch('/atualizar_status_laudo_editor/{{ exame.id }}/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': getCookie('csrftoken')
-    },
-    body: JSON.stringify({ status: 'Laudado' })
-  });
-}
-
-/* ---- COOKIE ---- */
-function getCookie(name) {
-  for (const c of (document.cookie || '').split(';')) {
-    const t = c.trim();
-    if (t.startsWith(name + '=')) return decodeURIComponent(t.substring(name.length + 1));
-  }
-  return null;
-}
-
-/* ---- FILE INPUT ---- */
-document.getElementById('fileInput').onchange = function () {
-  const r = new FileReader();
-  r.onload = e => quill.insertEmbed(quill.getSelection(true).index, 'image', e.target.result);
-  r.readAsDataURL(this.files[0]);
-};
-
-/* ---- PASTE IMAGE ---- */
-document.addEventListener('paste', e => {
-  for (const item of e.clipboardData.items) {
-    if (item.type.indexOf('image') !== -1) {
-      e.preventDefault();
-      const r = new FileReader();
-      r.onload = ev => quill.insertEmbed(quill.getSelection(true).index, 'image', ev.target.result);
-      r.readAsDataURL(item.getAsFile());
-    }
-  }
-});
-
-/* ---- ACTIONS ---- */
-function copiarHTML()  { navigator.clipboard.writeText(quill.root.innerHTML); }
-function copiarTexto() { navigator.clipboard.writeText(quill.getText()); }
-function abrirImagem() { document.getElementById('fileInput').click(); }
-function limpar() { quill.setText(''); setStatus('none'); }
-
-function salvarModelo() {
-  fetch('/criar_modelos/', { method: 'POST', body: new FormData(document.getElementById('formNovoModelo')) })
-  .then(() => fetch('/listar_modelos/')).then(r => r.text())
-  .then(html => { document.getElementById('dialogModelos').innerHTML = html; });
-}
-function salvarClinica() {
-  fetch('/criar_clinica/', { method: 'POST', body: new FormData(document.getElementById('formNovaClinica')) })
-  .then(() => fetch('/listar_clinicas/')).then(r => r.text())
-  .then(html => { document.getElementById('dialogModelos').innerHTML = html; });
-}
-function modelo() {
-  fetch('/listar_modelos/').then(r => r.text()).then(html => {
-    document.getElementById('dialogModelos').innerHTML = html;
-    document.getElementById('dialogModelos').showModal();
-  });
-}
-function abrirClinica() {
-  fetch('/listar_clinicas/').then(r => r.text()).then(html => {
-    document.getElementById('dialogModelos').innerHTML = html;
-    document.getElementById('dialogModelos').showModal();
-  });
-}
-
-function passar_para_editor(n,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12) {
-  quill.root.innerHTML =
-    '<p><strong>Paciente: {{ exame.paciente.nome }}</strong></p>' +
-    [c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12].map(c => `<p>${c}</p>`).join('');
-  document.getElementById('dialogModelos').close();
-}
-
-/* ---- SALVAR ---- */
-function salvar() {
-  fetch('/salvar-laudo/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': getCookie('csrftoken')
-    },
-    body: JSON.stringify({
-      laudoHTML: quill.root.innerHTML,
-      studyInstanceUid: '{{ exame.study_instance_uid }}'
-    })
-  })
-  .then(r => r.json())
-  .then(data => {
-    setStatus('saved');
-    document.getElementById('modalCodigo').value = data.codigo;
-    document.getElementById('modalLink').value   = window.location.origin + '/portal/' + data.codigo;
-    document.getElementById('modalSalvo').showModal();
-  })
-  .catch(() => setStatus('error'));
-}
-document.addEventListener('keydown', e => {
-  if (e.ctrlKey && e.key === 's') { e.preventDefault(); salvar(); }
-});
-
-const modelosData = {
-  {% for x in modelos %}
-  "{{ x.id }}": ["{{ x.nome_modelo }}","{{ x.campo2 }}","{{ x.campo3 }}","{{ x.campo4 }}","{{ x.campo5 }}","{{ x.campo6 }}","{{ x.campo7 }}","{{ x.campo8 }}","{{ x.campo9 }}","{{ x.campo10 }}","{{ x.campo11 }}","{{ x.campo12 }}"],
-  {% endfor %}
-};
-function segundoMonitor(){
-window.open('/view_monitor/{{ exame.id }}/', '_blank')
-}
-function aplicarModelo(id) {
-  const m = modelosData[id];
-  if (!m) return;
-  passar_para_editor(...m);
-}
-
-/* ---- COPIAR LINK ---- */
-function copiarLink() {
-  navigator.clipboard.writeText(document.getElementById('modalLink').value);
-  const btn = document.querySelector('#modalSalvo .btn-copiar');
-  const orig = btn.innerText;
-  btn.innerText = '✅ Copiado!';
-  setTimeout(() => btn.innerText = orig, 2000);
-}
-
-/* ---- AUTO-SAVE ---- */
-function salvarSilencioso() {
-  fetch('/salvar-laudo/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': getCookie('csrftoken')
-    },
-    body: JSON.stringify({
-      laudoHTML: quill.root.innerHTML,
-      studyInstanceUid: '{{ exame.study_instance_uid }}'
-    })
-  })
-  .then(r => r.json())
-  .then(() => setStatus('saved'))
-  .catch(() => setStatus('error'));
-}
-
-setInterval(() => {
-  if (document.getElementById('status').innerText === 'Editando...') salvarSilencioso();
-}, 10000);
-
-/* ---- CTRL+S ---- */
-document.addEventListener('keydown', e => {
-  if (e.ctrlKey && e.key === 's') { e.preventDefault(); salvar(); }
-});
-function abrirVeterinario() {
-  fetch('/listar_veterinarios/').then(r => r.text()).then(html => {
-    document.getElementById('dialogModelos').innerHTML = html;
-    document.getElementById('dialogModelos').showModal();
-  });
-}
-
-function salvarVeterinario() {
-  fetch('/criar_veterinario/', { method: 'POST', body: new FormData(document.getElementById('formNovoVet')) })
-  .then(r => r.text())
-  .then(html => { document.getElementById('dialogModelos').innerHTML = html; });
-}
-function selecionarVeterinario(id, nome) {
-  const sel = document.getElementById('select-vet-pedidor');
-  // Adiciona a option se não existir
-  if (!sel.querySelector(`option[value="${id}"]`)) {
-    const opt = new Option(nome, id);
-    sel.add(opt);
-  }
-  sel.value = id;
-  document.getElementById('dialogModelos').close();
-}
-</script>
 </body>
 </html>

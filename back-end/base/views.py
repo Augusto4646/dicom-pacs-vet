@@ -24,6 +24,7 @@ import numpy as np
 from PIL import Image
 import io
 import base64
+from django.db.models import Sum
 
 ORTHANC_URL = "http://vizionvet.com.br/orthanc"
 
@@ -69,9 +70,7 @@ def dashbord(request):
 
     return render(request, "dashbord.html", {"exames": exames})
 
-from django.db.models import Sum
 
-@login_required
 @login_required
 def menu(request):
     usuario, _ = Usuario.objects.get_or_create(user=request.user)
@@ -439,6 +438,65 @@ def laudo_editor(request, exame_id):
         "clinicas": clinicas,
         "veterinarios": vets,
     })# ---------------------------------------------------------------------------
+
+
+def view_monitor(request, exame_id):
+    usuario, created = Usuario.objects.get_or_create(user=request.user)
+    exame = get_object_or_404(Exame, id=exame_id)
+    exames = Exame.objects.filter(instituicao__in=usuario.instituicoes.all())
+    membros = exame.instituicao.membros_insituticao.all() if exame.instituicao else []
+    modelos = Modelo.objects.filter(usuario_logado=usuario)
+    clinicas = Clinica.objects.filter(usuario_logado=usuario)
+    vets = VeterinarioPedidor.objects.all()
+
+    if request.method == 'POST':
+        vet_id = request.POST.get("veterinario_pedidor")
+        if vet_id:
+            exame.veterinario_pedidor_id = vet_id
+
+        exame.tipo_exame = request.POST.get("tipo_exame")
+        if not exame.codigo_acesso:
+            exame.codigo_acesso = exame._gerar_codigo()
+        exame.save()
+
+        exame.paciente.nome = request.POST.get("Paciente")
+        exame.paciente.nome_tutor = request.POST.get("Tutor")
+        exame.paciente.save()
+
+        valor = request.POST.get("valor") or 0
+        repasse = request.POST.get("repasse") or 0
+        pago = request.POST.get("pago") == "on"
+        forma = request.POST.get("forma_pagamento") or ""
+        clinica_id = request.POST.get("clinica") or None
+
+        if exame.financeiro:
+            exame.financeiro.pago = pago
+            exame.financeiro.valor = valor
+            exame.financeiro.valor_repasse_a_clinica = repasse
+            exame.financeiro.forma_pagamento = forma
+            if clinica_id:
+                exame.financeiro.clinica_id = clinica_id
+            exame.financeiro.save()
+        elif exame.instituicao:
+            financeiro = Financeiro.objects.create(
+                instituicao=exame.instituicao,
+                pago=pago,
+                valor=valor,
+                valor_repasse_a_clinica=repasse,
+                forma_pagamento=forma,
+                clinica_id=clinica_id,
+            )
+            exame.financeiro = financeiro
+            exame.save()
+
+    return render(request, "lado_esquerdo.html", {
+        "exame": exame,
+        "exames": exames,
+        "membros": membros,
+        "modelos": modelos,
+        "clinicas": clinicas,
+        "veterinarios": vets,
+    })# ---------------------------------------------------------------------------
 # deletar modelo
 # --------------------------------------------------------------------------
 
@@ -487,7 +545,6 @@ def editar_cabecalho(request,exame_id):
         
     return JsonResponse({"status": "ok"})
 
-
 def listar_veterinarios(request):
     vets = VeterinarioPedidor.objects.all()
     return render(request, "pagina_veterinarios.html", {"veterinarios": vets})
@@ -502,3 +559,8 @@ def deletar_veterinario(request, veterinario_id):
     veterinario = get_object_or_404(VeterinarioPedidor, id=veterinario_id)
     veterinario.delete()  
     return redirect('/listar_veterinarios/')
+
+def deletar_exame(request, exame_id):
+    exame = get_object_or_404(Exame, id=exame_id)
+    exame.delete()
+    return redirect('/dashbord/')

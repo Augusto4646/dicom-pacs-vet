@@ -59,7 +59,6 @@ class Clinica(models.Model):
     nome_clinica = models.CharField(max_length=100, blank=True, null=True)
     whats_clinica= models.CharField(max_length=100, blank=True, null=True)
     usuario_logado = models.ForeignKey(Usuario, on_delete=models.CASCADE,null=True)
-
     def __str__(self):
         return self.nome_clinica or "Clinica"
 class VeterinarioPedidor(models.Model):

@@ -20,7 +20,9 @@ urlpatterns = [
 
     # Editor de laudo
     path('laudo/<int:exame_id>/', views.laudo_editor, name='laudo_editor'),
-path('laudo_editor/<int:exame_id>/', views.laudo_editor, name='laudo_editor'),
+    path('laudo_editor/<int:exame_id>/', views.laudo_editor, name='laudo_editor'),
+    path('view_monitor/<int:exame_id>/', views.view_monitor, name='view_monitor'),
+
     # Salvar laudo em HTML
     path('salvar-laudo/', views.salvar_laudo, name='salvar_laudo'),
 
@@ -55,4 +57,7 @@ path('laudo_editor/<int:exame_id>/', views.laudo_editor, name='laudo_editor'),
     path('deletar_modelo/<int:modelo_id>/', views.deletar_modelo),
     path('deletar_clinica/<int:clinica_id/',views.deletar_clinica),
     path('deletar_veterinario/<int:veterinario_id>/',views.deletar_veterinario),   
+    path('deletar_exame/<int:exame_id>/', views.deletar_exame, name='deletar_exame'),
+
+
 ]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
