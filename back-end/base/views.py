@@ -26,7 +26,7 @@ import io
 import base64
 from django.db.models import Sum
 
-ORTHANC_URL = "http://vizionvet.com.br/orthanc"
+ORTHANC_URL = "http://vizionxvet.conexao46.com.br/orthanc"
 
 # ---------------------------------------------------------------------------
 # Sync
@@ -231,7 +231,7 @@ def editar_paciente(request, exame_id):
         novo_nome = request.POST.get("nome")
         exame = get_object_or_404(Exame, id=exame_id)
 
-        ORTHANC_URL = "http://vizionvet.com.br/orthanc"
+        ORTHANC_URL = "http://vizionxvet.conexao46.com.br/orthanc"
         study_uid = exame.study_instance_uid
 
         find = requests.post(

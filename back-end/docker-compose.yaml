@@ -1,29 +1,36 @@
 services:
 
   orthanc:
-   image: orthancteam/orthanc:latest  
-   container_name: orthanc
-   ports:
-    - "8042:8042"
-    - "4242:4242"
-   volumes:
-    - ../dicom-server/orthanc.json:/etc/orthanc/orthanc.json  
-    - orthanc_data:/var/lib/orthanc/db
-   environment:
-    ORTHANC__HTTP_SERVER__FORWARDED: "true"
-   networks:
-    - orthanc-network
+    image: orthancteam/orthanc:latest
+    container_name: orthanc
+    ports:
+      - "8042:8042"
+      - "4242:4242"
+    volumes:
+      - ../dicom-server/orthanc.json:/etc/orthanc/orthanc.json
+      - orthanc_data:/var/lib/orthanc/db
+    environment:
+      ORTHANC__HTTP_SERVER__FORWARDED: "true"
+    networks:
+      - orthanc-network
 
-  ngix:
-   image: nginx:latest
-   container_name: nginx-proxy
-   ports:
-    - "8082:80"
-   volumes:
-    - ./Ngix/nginx.conf:/etc/nginx/conf.d/default.conf
-   networks:
-    - orthanc-network
+  nginx:
+    image: nginx:latest
+    container_name: nginx
 
+    depends_on:
+      - ohif
+      - orthanc
+      - django-web
+
+    ports:
+      - "8082:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx/certificados:/etc/nginx/certificados
+
+    networks:
+      - orthanc-network
 
   ohif:
     image: ohif/app:v3.9.2
@@ -51,7 +58,6 @@ services:
     networks:
       - orthanc-network
 
-
   django-web:
     build: .
     container_name: django-docker
@@ -78,7 +84,6 @@ services:
     networks:
       - orthanc-network
     user: "1000:1000"
-
 
 networks:
   orthanc-network:

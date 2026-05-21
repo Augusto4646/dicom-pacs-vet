@@ -4,7 +4,7 @@ from base.models import Exame, Paciente, Instituicao, Usuario
 import re
 import unicodedata
 
-ORTHANC_URL = "http://vizionvet.com.br/orthanc"
+ORTHANC_URL = "http://vizionxvet.conexao46.com.br/orthanc"
 
 
 def normalizar_nome(texto):

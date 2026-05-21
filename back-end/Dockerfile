@@ -1,4 +1,4 @@
-   # Stage 1: Base build stage
+# Stage 1: Base build stage
    FROM python:3.13-slim AS builder
    
    # Create the app directory
