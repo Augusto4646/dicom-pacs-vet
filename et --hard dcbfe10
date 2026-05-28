@@ -1,0 +1,16 @@
+[33medbf77c[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m commit do inicio do mes
+[33mdcbfe10[m Commit pre lançamenti do arthur
+[33m10e7469[m adiconada a funcionalidade de quebrar a tela para colocar em 2 monitores ainda sendo ajustado
+[33m821408a[m adicionei a opçao de excluir modelos veterinarios e  clinicas
+[33m3ff77a0[m adcionado temrinado de vincular o financeiro tanto nas vieews quanto em menu e laudo_editor
+[33mb29ff2d[m laudo_editor costumizado
+[33mb71835b[m pagina de laudo incial alem de alteracoes no model
+[33m3b49b82[m atualizacao model financeiro
+[33m758ee35[m modicacoes_does_ultimos_20_dias_que_eu_deveria_ter_feito_antes
+[33mfa8bcc4[m modicacoes_does_ultimos_20_dias_que_eu_deveria_ter_feito_antes
+[33me5c0344[m mensagem
+[33m77efc8b[m chore: limpa arquivos temporarios
+[33mf8792da[m sync: estado real da produção
+[33m888eb85[m mega update before deploy
+[33md0a91ef[m Add gitignore
+[33m1f7cf08[m first commit

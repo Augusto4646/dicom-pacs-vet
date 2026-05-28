@@ -1,7 +1,7 @@
-window.PUBLIC_URL = '/viewer/';
+window.PUBLIC_URL = '/';
 
 window.config = {
-  routerBasename: '/viewer/',
+  routerBasename: 'viewer/',
 
   showStudyList: true,
 
@@ -14,7 +14,7 @@ window.config = {
     '@ohif/mode-longitudinal',
   ],
 
-  dataSources: [
+  dataSources: [  
     {
       namespace: '@ohif/extension-default.dataSourcesModule.dicomweb',
       sourceName: 'dicomweb',
@@ -22,9 +22,9 @@ window.config = {
         friendlyName: 'Orthanc',
         name: 'orthanc',
 
-        qidoRoot: '/orthanc/dicom-web',
-        wadoRoot: '/orthanc/dicom-web',
-        wadoUriRoot: '/orthanc/wado',
+        qidoRoot: 'https://orthanc.conexao46.com.br/dicom-web',
+        wadoRoot: 'https://orthanc.conexao46.com.br/dicom-web',
+        wadoUriRoot: 'https://orthanc.conexao46.com.br/wado',
       },
     },
   ],

@@ -1,18 +1,24 @@
 services:
 
   orthanc:
-    image: orthancteam/orthanc:latest
+    build:
+      context: ./orthanc-custom
+
     container_name: orthanc
+
     ports:
-      - "8042:8042"
-      - "4242:4242"
+      - "9042:9042"
+      - "4243:4243"
+
+    restart: unless-stopped
+
     volumes:
-      - ../dicom-server/orthanc.json:/etc/orthanc/orthanc.json
-      - orthanc_data:/var/lib/orthanc/db
-    environment:
-      ORTHANC__HTTP_SERVER__FORWARDED: "true"
+      - ./orthanc-custom/orthanc.json:/orthanc/orthanc.json
+      - ./orthanc-dicomweb/Build/libOrthancDicomWeb.so:/orthanc/libOrthancDicomWeb.so
+
     networks:
       - orthanc-network
+
 
   nginx:
     image: nginx:latest
@@ -25,6 +31,7 @@ services:
 
     ports:
       - "8082:80"
+
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
       - ./nginx/certificados:/etc/nginx/certificados
@@ -32,42 +39,57 @@ services:
     networks:
       - orthanc-network
 
+
   ohif:
     image: ohif/app:v3.9.2
     container_name: ohif
+
     ports:
       - "3000:80"
+
     volumes:
       - ./ohif-config/app-config.js:/usr/share/nginx/html/app-config.js
+
     depends_on:
       - orthanc
+
     networks:
       - orthanc-network
+
 
   db:
     image: postgres:17
     container_name: postgres-db
+
     environment:
       POSTGRES_DB: projeto_pacs
       POSTGRES_USER: projeto_pacs
       POSTGRES_PASSWORD: Tomatecomsal46
+
     ports:
       - "5432:5432"
+
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
     networks:
       - orthanc-network
+
 
   django-web:
     build: .
     container_name: django-docker
+
     ports:
       - "8000:8000"
+
     volumes:
       - .:/app
       - ./media:/app/media
+
     depends_on:
       - db
+
     environment:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
       DEBUG: ${DEBUG}
@@ -79,15 +101,20 @@ services:
       DATABASE_PASSWORD: Tomatecomsal46
       DB_HOST: db
       DATABASE_PORT: 5432
+
     env_file:
       - .env
+
     networks:
       - orthanc-network
+
     user: "1000:1000"
+
 
 networks:
   orthanc-network:
     driver: bridge
+
 
 volumes:
   postgres_data:

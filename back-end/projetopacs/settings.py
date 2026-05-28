@@ -106,6 +106,7 @@ AUTH_PASSWORD_VALIDATORS = [
 CSRF_TRUSTED_ORIGINS = [
     'https://vizionxvet.conexao46.com.br',
     'https://www.vizionxvet.conexao46.com.br',
+    'https://pacsvizionxvet.conexao46.com.br/'
 ]
 
 
