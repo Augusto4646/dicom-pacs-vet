@@ -1,20 +1,14 @@
-<!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
 <meta charset="UTF-8">
 <title>Laudo</title>
-<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://unpkg.com/split.js/dist/split.min.js"></script>
-<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/quill-image-resize-module@3.0.0/image-resize.min.js"></script>
+<script src="https://pacsvizionxvet.conexao46.com.br/onlyoffice/web-apps/apps/api/documents/api.js"
+        onload="initEditor()"></script>
 
 <style>
-/* ============================================================
-   RESET & ROOT VARIABLES
-   ============================================================ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -43,9 +37,6 @@
   --radius-lg:   10px;
 }
 
-/* ============================================================
-   BASE
-   ============================================================ */
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 13px;
@@ -56,45 +47,12 @@ body {
   line-height: 1.5;
 }
 
-/* ============================================================
-   LAYOUT
-   ============================================================ */
 .app {
   display: flex;
   height: 100vh;
   overflow: hidden;
 }
 
-/* ============================================================
-   TOGGLE BAR (fixed top-left)
-   ============================================================ */
-.toggle-bar {
-  position: fixed;
-  top: 10px;
-  left: 10px;
-  z-index: 300;
-  display: flex;
-  gap: 6px;
-}
-
-.toggle-bar .tbtn {
-  padding: 5px 14px;
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  color: white;
-  transition: opacity 0.15s;
-}
-.toggle-bar .tbtn:hover { opacity: 0.85; }
-.tbtn-laudo  { background: var(--accent); }
-.tbtn-viewer { background: var(--gray); }
-
-/* ============================================================
-   LEFT PANEL
-   ============================================================ */
 #lado_esquerdo {
   width: 50%;
   min-width: 0;
@@ -106,7 +64,6 @@ body {
   border-right: 1px solid var(--border);
 }
 
-/* ---- FORM WRAPPER ---- */
 #laudo_form {
   flex: 1;
   overflow: hidden;
@@ -114,21 +71,156 @@ body {
   flex-direction: column;
 }
 
-/* ---- VIEWER ---- */
 #viewer_iframe {
   width: 100%;
   height: 100%;
   display: none;
+  flex-direction: column;
 }
 #viewer_iframe iframe {
   width: 100%;
-  height: 100%;
+  flex: 1;
   border: none;
 }
 
-/* ============================================================
-   TABS
-   ============================================================ */
+#usg_viewer {
+  width: 100%;
+  height: 100%;
+  display: none;
+  flex-direction: column;
+  background: #000;
+  position: relative;
+}
+
+#usg_main_img {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  cursor: zoom-in;
+}
+
+#usg_canvas {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transform-origin: center center;
+  transition: transform 0.15s ease;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.usg-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.55);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #fff;
+  font-size: 22px;
+  width: 38px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.15s;
+  user-select: none;
+}
+.usg-nav:hover { background: rgba(99,102,241,0.6); }
+#usg_prev { left: 8px; }
+#usg_next { right: 8px; }
+
+#usg_topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #111;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.usg-tbtn {
+  padding: 4px 10px;
+  background: var(--surface3);
+  border: 1px solid var(--border-md);
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.usg-tbtn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+#usg_counter {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+#usg_loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.7);
+  color: var(--text-muted);
+  font-size: 13px;
+  z-index: 20;
+}
+
+#usg_thumbs {
+  height: 72px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  background: #0a0a0a;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface3) transparent;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.usg-thumb {
+  height: 58px;
+  min-width: 58px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: 3px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  opacity: 0.6;
+  transition: all 0.15s;
+}
+.usg-thumb:hover { opacity: 0.9; }
+.usg-thumb.active {
+  border-color: var(--accent);
+  opacity: 1;
+}
+
+#usg_empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 13px;
+  height: 100%;
+}
+
 .tabs {
   display: flex;
   padding: 12px 14px 0;
@@ -153,19 +245,9 @@ body {
   border: 1px solid var(--border);
   border-bottom: none;
 }
-.tab-btn:hover {
-  background: var(--surface3);
-  color: var(--text-dim);
-}
-.tab-btn.active {
-  background: var(--accent);
-  color: white;
-  border-color: var(--accent);
-}
+.tab-btn:hover { background: var(--surface3); color: var(--text-dim); }
+.tab-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
 
-/* ============================================================
-   FORM BODY
-   ============================================================ */
 .form-body {
   flex: 1;
   overflow-y: auto;
@@ -176,12 +258,7 @@ body {
 .form-body::-webkit-scrollbar { width: 4px; }
 .form-body::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 4px; }
 
-/* ============================================================
-   FIELD GROUPS
-   ============================================================ */
-.field-group {
-  margin-bottom: 14px;
-}
+.field-group { margin-bottom: 14px; }
 
 .field-label {
   display: flex;
@@ -196,386 +273,158 @@ body {
 }
 
 .add-btn {
-  width: 20px;
-  height: 20px;
+  width: 20px; height: 20px;
   border-radius: 50%;
-  background: var(--green);
-  color: white;
-  border: none;
-  font-size: 15px;
-  line-height: 1;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  transition: opacity 0.15s;
-  flex-shrink: 0;
+  background: var(--green); color: white;
+  border: none; font-size: 15px; line-height: 1;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  padding: 0; transition: opacity 0.15s; flex-shrink: 0;
 }
 .add-btn:hover { opacity: 0.8; }
 
 .edit-btn {
-  width: 20px;
-  height: 20px;
+  width: 20px; height: 20px;
   border-radius: 50%;
-  background: var(--surface3);
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-  font-size: 10px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  transition: all 0.15s;
-  flex-shrink: 0;
+  background: var(--surface3); color: var(--text-muted);
+  border: 1px solid var(--border); font-size: 10px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  padding: 0; transition: all 0.15s; flex-shrink: 0;
 }
 .edit-btn:hover { background: var(--surface3); color: var(--text); }
 .edit-btn.accent { background: var(--accent); color: white; border-color: var(--accent); }
 
 .info-icon {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--surface3);
-  color: var(--text-muted);
-  font-size: 9px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: default;
-  flex-shrink: 0;
-  border: 1px solid var(--border);
+  width: 14px; height: 14px;
+  border-radius: 50%; background: var(--surface3); color: var(--text-muted);
+  font-size: 9px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  cursor: default; flex-shrink: 0; border: 1px solid var(--border);
 }
 
-/* ============================================================
-   SELECTS
-   ============================================================ */
-.select-wrap {
-  position: relative;
-}
-
+.select-wrap { position: relative; }
 .select-wrap select {
-  width: 100%;
-  padding: 8px 30px 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--surface2);
-  color: var(--text);
-  font-size: 13px;
-  font-family: inherit;
-  appearance: none;
-  cursor: pointer;
-  outline: none;
+  width: 100%; padding: 8px 30px 8px 10px;
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--surface2); color: var(--text);
+  font-size: 13px; font-family: inherit; appearance: none; cursor: pointer; outline: none;
   transition: border-color 0.15s;
 }
 .select-wrap select:focus { border-color: var(--accent); }
 .select-wrap select option { background: var(--surface2); color: var(--text); }
-
 .select-wrap::after {
-  content: '▾';
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-muted);
-  pointer-events: none;
-  font-size: 10px;
+  content: '▾'; position: absolute; right: 10px; top: 50%;
+  transform: translateY(-50%); color: var(--text-muted);
+  pointer-events: none; font-size: 10px;
 }
 
-/* ============================================================
-   INPUTS
-   ============================================================ */
-input[type="text"],
-input[type="number"],
-input[type="date"],
-input[type="email"],
-input[type="tel"] {
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  font-size: 13px;
-  font-family: inherit;
-  color: var(--text);
-  background: var(--surface2);
-  outline: none;
-  transition: border-color 0.15s;
+input[type="text"], input[type="number"], input[type="date"],
+input[type="email"], input[type="tel"] {
+  width: 100%; padding: 8px 10px;
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  font-size: 13px; font-family: inherit; color: var(--text);
+  background: var(--surface2); outline: none; transition: border-color 0.15s;
 }
-input[type="text"]:focus,
-input[type="number"]:focus,
-input[type="date"]:focus { border-color: var(--accent); }
+input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus { border-color: var(--accent); }
 input::placeholder { color: var(--text-muted); }
+input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); cursor: pointer; }
 
-input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.5);
-  cursor: pointer;
-}
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-/* ============================================================
-   GRID LAYOUT
-   ============================================================ */
-.grid-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-/* ============================================================
-   PAGO TOGGLE
-   ============================================================ */
 .pago-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
-  padding: 10px 12px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+  padding: 10px 12px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: var(--radius-md);
 }
+.pago-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; flex: 1; }
 
-.pago-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  flex: 1;
-}
-
-.toggle-switch {
-  position: relative;
-  width: 42px;
-  height: 24px;
-  flex-shrink: 0;
-}
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-  position: absolute;
-}
+.toggle-switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
 .toggle-slider {
-  position: absolute;
-  inset: 0;
-  background: var(--surface3);
-  border: 1px solid var(--border-md);
-  border-radius: 24px;
-  cursor: pointer;
-  transition: all 0.2s;
+  position: absolute; inset: 0; background: var(--surface3);
+  border: 1px solid var(--border-md); border-radius: 24px;
+  cursor: pointer; transition: all 0.2s;
 }
 .toggle-slider::before {
-  content: '';
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  left: 2px;
-  top: 2px;
-  background: var(--text-muted);
-  border-radius: 50%;
-  transition: all 0.2s;
+  content: ''; position: absolute; width: 18px; height: 18px; left: 2px; top: 2px;
+  background: var(--text-muted); border-radius: 50%; transition: all 0.2s;
   box-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
-.toggle-switch input:checked + .toggle-slider {
-  background: var(--accent);
-  border-color: var(--accent);
-}
-.toggle-switch input:checked + .toggle-slider::before {
-  transform: translateX(18px);
-  background: white;
-}
+.toggle-switch input:checked + .toggle-slider { background: var(--accent); border-color: var(--accent); }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); background: white; }
 
-/* ============================================================
-   VALOR INPUTS WITH PREFIX
-   ============================================================ */
 .valor-input-wrap {
-  display: flex;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  transition: border-color 0.15s;
+  display: flex; border: 1px solid var(--border); border-radius: var(--radius-md);
+  overflow: hidden; transition: border-color 0.15s;
 }
 .valor-input-wrap:focus-within { border-color: var(--accent); }
-
 .valor-prefix {
-  padding: 8px 10px;
-  background: var(--bg);
-  border-right: 1px solid var(--border);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-muted);
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
+  padding: 8px 10px; background: var(--bg); border-right: 1px solid var(--border);
+  font-size: 12px; font-weight: 700; color: var(--text-muted);
+  white-space: nowrap; display: flex; align-items: center;
 }
+.valor-input-wrap input { border: none; border-radius: 0; flex: 1; background: var(--surface2); width: 100%; }
+.valor-input-wrap input:focus { border-color: transparent; outline: none; }
 
-.valor-input-wrap input {
-  border: none;
-  border-radius: 0;
-  flex: 1;
-  background: var(--surface2);
-  width: 100%;
-}
-.valor-input-wrap input:focus {
-  border-color: transparent;
-  outline: none;
-}
-
-/* ============================================================
-   SECTION DIVIDER
-   ============================================================ */
 .section-divider {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 16px 0 14px;
+  display: flex; align-items: center; gap: 10px; margin: 16px 0 14px;
 }
 .section-divider span {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  white-space: nowrap;
+  font-size: 10px; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap;
 }
-.section-divider::before,
-.section-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
+.section-divider::before, .section-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
 }
 
-/* ============================================================
-   TOTAL BAR
-   ============================================================ */
 .total-bar {
-  padding: 14px 16px;
-  border-top: 1px solid var(--border);
-  background: var(--surface);
-  flex-shrink: 0;
+  padding: 14px 16px; border-top: 1px solid var(--border);
+  background: var(--surface); flex-shrink: 0;
 }
-
-.total-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.total-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.total-value {
-  font-size: 22px;
-  font-weight: 800;
-  color: var(--text);
-  letter-spacing: -0.02em;
-}
+.total-inner { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.total-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.total-value { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
 
 .submit-btn {
-  width: 100%;
-  padding: 10px;
-  background: var(--accent);
-  color: white;
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.15s;
-  letter-spacing: 0.03em;
+  width: 100%; padding: 10px; background: var(--accent); color: white;
+  border: none; border-radius: var(--radius-md); font-size: 13px;
+  font-weight: 700; cursor: pointer; transition: background 0.15s; letter-spacing: 0.03em;
 }
 .submit-btn:hover { background: var(--accent-hover); }
 
-/* ============================================================
-   SPLIT GUTTER
-   ============================================================ */
 .gutter {
-  background: var(--border);
-  cursor: col-resize;
-  width: 5px !important;
-  transition: background 0.15s;
-  position: relative;
+  background: var(--border); cursor: col-resize; width: 5px !important;
+  transition: background 0.15s; position: relative;
 }
 .gutter:hover { background: var(--accent); }
 .gutter::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 2px;
-  height: 32px;
-  background: var(--border-md);
-  border-radius: 2px;
+  content: ''; position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%); width: 2px; height: 32px;
+  background: var(--border-md); border-radius: 2px;
 }
 
-/* ============================================================
-   RIGHT EDITOR PANEL
-   ============================================================ */
 .editor-panel {
-  width: 50%;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background: var(--surface);
+  width: 50%; min-width: 0; display: flex;
+  flex-direction: column; height: 100vh; background: var(--surface);
 }
 
-/* ---- EDITOR TOPBAR ---- */
 .editor-topbar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border);
-  flex-wrap: wrap;
-  flex-shrink: 0;
+  display: flex; align-items: center; gap: 6px; padding: 8px 12px;
+  border-bottom: 1px solid var(--border); flex-wrap: wrap; flex-shrink: 0;
   background: var(--surface);
 }
-
-.topbar-label {
-  font-size: 11px;
-  color: var(--text-muted);
-  font-weight: 600;
-}
-
+.topbar-label { font-size: 11px; color: var(--text-muted); font-weight: 600; }
 .topbar-select {
-  padding: 4px 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface2);
-  color: var(--text);
-  font-size: 12px;
-  font-family: inherit;
-  outline: none;
+  padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface2); color: var(--text); font-size: 12px; font-family: inherit; outline: none;
 }
 
-/* ---- TOPBAR BUTTONS ---- */
 .tbtn-action {
-  padding: 5px 10px;
-  border: none;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  color: white;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  transition: opacity 0.15s;
-  white-space: nowrap;
+  padding: 5px 10px; border: none; border-radius: var(--radius-sm);
+  cursor: pointer; font-size: 12px; font-weight: 600; color: white;
+  display: inline-flex; align-items: center; gap: 4px;
+  transition: opacity 0.15s; white-space: nowrap;
 }
 .tbtn-action:hover { opacity: 0.85; }
-
 .btn-salvar  { background: var(--green); }
 .btn-pdf     { background: var(--red); }
 .btn-html    { background: var(--purple); }
@@ -587,208 +436,92 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .btn-fechar  { background: var(--gray); }
 .btn-neutro  { background: var(--surface3); color: var(--text); border: 1px solid var(--border); }
 
-/* ---- CODIGO BADGE ---- */
 .codigo-badge {
-  font-size: 11px;
-  color: var(--text-muted);
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 3px 8px;
-  font-family: monospace;
-  letter-spacing: 0.05em;
+  font-size: 11px; color: var(--text-muted); background: var(--surface2);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 3px 8px; font-family: monospace; letter-spacing: 0.05em;
 }
 
-/* ---- STATUS BAR ---- */
 .statusbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 11px;
-  color: var(--text-muted);
-  padding: 5px 12px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-  background: var(--bg);
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 11px; color: var(--text-muted); padding: 5px 12px;
+  border-bottom: 1px solid var(--border); flex-shrink: 0; background: var(--bg);
 }
-
-.status-dot {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--text-muted);
-  margin-right: 5px;
-}
+.status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); margin-right: 5px; }
 .status-dot.editing { background: var(--amber); }
 .status-dot.saved   { background: var(--green); }
 
-/* ---- QUILL EDITOR ---- */
-#editor { flex: 10;  min-height: 0;  overflow: hidden; background: var(--bg); }
-
-.ql-toolbar.ql-snow {
-  background: var(--surface2) !important;
-  border: none !important;
-  border-bottom: 1px solid var(--border) !important;
-  padding: 6px 10px;
-}
-.ql-toolbar .ql-stroke { stroke: var(--text-muted) !important; }
-.ql-toolbar .ql-fill   { fill: var(--text-muted) !important; }
-.ql-toolbar .ql-picker-label { color: var(--text-muted) !important; }
-.ql-toolbar button:hover .ql-stroke { stroke: var(--text) !important; }
-.ql-toolbar button:hover .ql-fill   { fill: var(--text) !important; }
-.ql-toolbar button.ql-active .ql-stroke { stroke: var(--accent-hover) !important; }
-.ql-toolbar .ql-picker-options {
-  background: var(--surface2) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: var(--radius-md) !important;
-}
-.ql-toolbar .ql-picker-item { color: var(--text) !important; }
-.ql-toolbar .ql-picker-item:hover { color: var(--accent-hover) !important; }
-
-.ql-container.ql-snow {
-  border: none !important;
-  background: var(--bg);
-  height: calc(100% - 42px);
-}
-
-.ql-editor {
-  font-size: 15px;
-  max-width: 820px;
-  padding-left: 0;
-  color: var(--text);
-  padding: 20px 1px; /* pode ajustar */
-}
-.ql-editor p { color: var(--text); }
-.ql-editor img { max-width: 100%; height: auto; border-radius: var(--radius-sm); }
-.ql-editor.ql-blank::before { color: var(--text-muted) !important; font-style: normal; }
-
-/* ---- ACTIONS BAR ---- */
-.actions-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  padding: 8px 12px;
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
-  background: var(--surface);
-}
-
-/* ============================================================
-   DROPDOWN
-   ============================================================ */
-.dd-wrap {
-  position: relative;
-  display: inline-block;
-}
-
-.dd-content {
-  display: none;
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  background: var(--surface2);
-  border: 1px solid var(--border-md);
-  border-radius: var(--radius-lg);
-  min-width: 200px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-  z-index: 100;
+#editor {
+  flex: 10;
+  min-height: 0;
   overflow: hidden;
+  background: var(--bg);
+  position: relative;
 }
 
-.dd-content a {
+#onlyoffice-placeholder {
+  width: 100%;
+  height: 100%;
+}
+
+#editor iframe {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
   display: block;
-  padding: 9px 14px;
-  color: var(--text-dim);
-  text-decoration: none;
-  font-size: 12px;
-  transition: all 0.12s;
 }
-.dd-content a:hover {
-  background: var(--accent-dim);
-  color: var(--accent-hover);
+
+.actions-bar {
+  display: flex; flex-wrap: wrap; gap: 5px; padding: 8px 12px;
+  border-top: 1px solid var(--border); flex-shrink: 0; background: var(--surface);
 }
+
+.dd-wrap { position: relative; display: inline-block; }
+.dd-content {
+  display: none; position: absolute; top: calc(100% + 4px); left: 0;
+  background: var(--surface2); border: 1px solid var(--border-md);
+  border-radius: var(--radius-lg); min-width: 200px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 100; overflow: hidden;
+}
+.dd-content a {
+  display: block; padding: 9px 14px; color: var(--text-dim);
+  text-decoration: none; font-size: 12px; transition: all 0.12s;
+}
+.dd-content a:hover { background: var(--accent-dim); color: var(--accent-hover); }
 .dd-content.open { display: block; }
 
-/* ============================================================
-   MODAL / DIALOG
-   ============================================================ */
 dialog {
-  border: none;
-  border-radius: var(--radius-lg);
-  padding: 24px;
-  min-width: 500px;
-  max-height: 88vh;
-  overflow-y: auto;
-  background: var(--surface);
-  color: var(--text);
+  border: none; border-radius: var(--radius-lg); padding: 24px;
+  min-width: 500px; max-height: 88vh; overflow-y: auto;
+  background: var(--surface); color: var(--text);
   box-shadow: 0 16px 48px rgba(0,0,0,0.6);
-  scrollbar-width: thin;
-  scrollbar-color: var(--surface3) transparent;
+  scrollbar-width: thin; scrollbar-color: var(--surface3) transparent;
 }
-dialog::backdrop {
-  background: rgba(0,0,0,0.65);
-  backdrop-filter: blur(2px);
-}
-
-dialog h3 {
-  margin: 0 0 20px;
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--text);
-}
-
+dialog::backdrop { background: rgba(0,0,0,0.65); backdrop-filter: blur(2px); }
+dialog h3 { margin: 0 0 20px; font-size: 17px; font-weight: 700; color: var(--text); }
 .modal-row { margin-bottom: 14px; }
-
 .modal-row label {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  display: block;
-  margin-bottom: 5px;
+  font-size: 11px; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 5px;
 }
-
 .modal-row input {
-  width: 100%;
-  padding: 9px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  font-size: 13px;
-  background: var(--surface2);
-  color: var(--text);
+  width: 100%; padding: 9px 12px; border: 1px solid var(--border);
+  border-radius: var(--radius-md); font-size: 13px;
+  background: var(--surface2); color: var(--text);
 }
 .modal-row input:focus { border-color: var(--accent); }
+.modal-actions { display: flex; gap: 8px; margin-top: 20px; }
 
-.modal-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 20px;
-}
-
-/* ============================================================
-   SCROLLBAR GLOBAL
-   ============================================================ */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--border-md); }
 
-/* ============================================================
-   MISC
-   ============================================================ */
 .spacer { flex: 1; }
-
 .badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 99px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  display: inline-flex; align-items: center; padding: 2px 8px;
+  border-radius: 99px; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase;
 }
 .badge-accent { background: var(--accent-dim); color: var(--accent-hover); }
 .badge-green  { background: var(--green-dim);  color: var(--green); }
@@ -797,16 +530,16 @@ dialog h3 {
 
 <body>
 
-<!-- ============================================================
-     TOGGLE BAR
-     ============================================================ -->
-
-
-<!-- ============================================================
-     MODAL: LAUDO SALVO
-     ============================================================ -->
 <dialog id="modalSalvo">
   <h3>✅ Laudo salvo com sucesso!</h3>
+  <div style="background:#f8fafc;border:1px solid #dbeafe;border-radius:8px;padding:15px;margin-bottom:15px;line-height:1.6;color:#333;">
+    Olá! Tudo bem? 😊<br><br>
+    O laudo do seu pet já está disponível para consulta.<br><br>
+    🔑 Código de acesso: <strong id="codigoMensagem"></strong><br><br>
+    📎 Utilize o código acima ou o link abaixo para visualizar o documento.<br><br>
+    🔗 <a id="linkMensagem" href="#" style="color:#3b82f6;word-break:break-all;text-decoration:underline;"></a><br><br>
+    Qualquer dúvida, estamos à disposição.
+  </div>
   <div class="modal-row">
     <label>Código de acesso</label>
     <input id="modalCodigo" type="text" readonly>
@@ -817,53 +550,39 @@ dialog h3 {
   </div>
   <div class="modal-actions">
     <button class="tbtn-action btn-copiar" onclick="copiarLink()">📋 Copiar link</button>
+    <button class="tbtn-action btn-salvar" onclick="copiarMensagem()">📩 Copiar mensagem</button>
     <button class="tbtn-action btn-fechar" onclick="document.getElementById('modalSalvo').close()">Fechar</button>
   </div>
 </dialog>
 
-
-
-
-<!-- Modal de modelos de laudo -->
 <dialog id="dialogModelos"></dialog>
 
-<!-- ============================================================
-     APP
-     ============================================================ -->
 <div class="app">
 
-  <!-- ============================================================
-       LEFT PANEL
-       ============================================================ -->
   <div id="lado_esquerdo">
 
-    <!-- FORM VIEW -->
     <div id="laudo_form">
-
-      <!-- TABS -->
       <div class="tabs">
-        <button class="tab-btn"  onclick="mostrar('laudo')">📋 Laudo</button>
+        <button class="tab-btn" onclick="mostrar('laudo')">📋 Laudo</button>
         <button class="tab-btn" onclick="mostrar('viewer')">🖼 Viewer</button>
-        <button class="tab-btn" onclick=segundoMonitor()>💻 Monitor</button>
-         <span style="color: var(--text-muted); padding: 0 4px; align-self: center;">🔹</span>
+        <button class="tab-btn" onclick="segundoMonitor()">💻 Monitor</button>
+        <span style="color:var(--text-muted);padding:0 4px;align-self:center;">🔹</span>
         <button class="tab-btn active" onclick="setTab(this,'ultrassom')">ULTRASSOM</button>
         <button class="tab-btn" onclick="setTab(this,'ecocardiograma')">ECOCARDIOGRAMA</button>
         <button class="tab-btn" onclick="setTab(this,'procedimentos')">PROCEDIMENTOS</button>
-        <button class="tab-btn" onclick="setTab(this,'radiografia')">RADIOGRAFIA  </button>
+        <button class="tab-btn" onclick="setTab(this,'radiografia')">RADIOGRAFIA</button>
       </div>
 
-      <!-- FORM BODY -->
       <div class="form-body">
         <form method="POST" action="/laudo_editor/{{ exame.id }}/" id="mainForm">
           {% csrf_token %}
-          <input type="hidden" name="tipo_exame" id="tipo_exame_hidden" value="ultrassom">
+          <input type="hidden" name="tipo_exame" id="tipo_exame_hidden" value="{{ exame.tipo_exame|default:'ultrassom' }}">
 
-          <!-- DATA -->
           <div class="field-group">
             <div class="field-label">Data</div>
-<input type="date" name="data" value="{% now 'Y-m-d' %}">          </div>
+            <input type="date" name="data" value="{% now 'Y-m-d' %}">
+          </div>
 
-          <!-- CLINICA + VETERINARIO -->
           <div class="grid-2">
             <div class="field-group">
               <div class="field-label">
@@ -873,12 +592,11 @@ dialog h3 {
                 <div class="info-icon" title="Informações">i</div>
               </div>
               <div class="select-wrap">
-<select name="clinica">
-  <option value="">Selecionar..</option>
-  {% for c in clinicas %}
-    <option value="{{ c.id }}">{{ c.nome_clinica }}</option>
-  {% endfor %}
-</select>                  
+                <select name="clinica">
+                  <option value="">Selecionar..</option>
+                  {% for c in clinicas %}
+                    <option value="{{ c.id }}">{{ c.nome_clinica }}</option>
+                  {% endfor %}
                 </select>
               </div>
             </div>
@@ -889,25 +607,20 @@ dialog h3 {
                 <button type="button" class="edit-btn" title="Editar">✏</button>
               </div>
               <div class="select-wrap">
-<select name="veterinario_pedidor" id="select-vet-pedidor">
-  <option value="">Selecionar...</option>
-  {% for v in veterinarios %}
-    <option value="{{ v.id }}" {% if exame.veterinario_pedidor == v.nome %}selected{% endif %}>{{ v.nome }}</option>
-  {% endfor %}
-</select>
+                <select name="veterinario_pedidor" id="select-vet-pedidor">
+                  <option value="">Selecionar...</option>
+                  {% for v in veterinarios %}
+                    <option value="{{ v.id }}" {% if exame.veterinario_pedidor == v.nome %}selected{% endif %}>{{ v.nome }}</option>
+                  {% endfor %}
+                </select>
               </div>
             </div>
           </div>
 
-          <!-- TUTOR + PACIENTE -->
           <div class="grid-2">
             <div class="field-group">
-              <div class="field-label">
-                Tutor
-              </div>
-              <div class="select-wrap">
-               <input type="text" name="Tutor" value="{{ exame.paciente.nome_tutor }}">
-              </div>
+              <div class="field-label">Tutor</div>
+              <input type="text" name="Tutor" value="{{ exame.paciente.nome_tutor }}">
             </div>
             <div class="field-group">
               <div class="field-label">
@@ -915,14 +628,10 @@ dialog h3 {
                 <button type="button" class="add-btn">+</button>
                 <button type="button" class="edit-btn">✏</button>
               </div>
-              <div class="select-wrap">
-                <input type="text" name="Paciente" value="{{ exame.paciente.nome }}">
-                </select>
-              </div>
+              <input type="text" name="Paciente" value="{{ exame.paciente.nome }}">
             </div>
           </div>
 
-          <!-- TIPO DE EXAME + MODELO -->
           <div class="grid-2">
             <div class="field-group">
               <div class="field-label">Tipo de Exame</div>
@@ -942,21 +651,19 @@ dialog h3 {
             <div class="field-group">
               <div class="field-label">
                 Modelo de Laudo
-
                 <button onclick="modelo()" type="button" class="add-btn">+</button>
                 <button type="button" class="edit-btn accent">✏</button>
               </div>
               <div class="select-wrap">
-<select name="Modelo" onchange="aplicarModelo(this.value)">
-                {% for x in modelos %}
-                  <option value="{{ x.id }}">{{ x.nome_modelo }}</option>
-                    {% endfor %}
+                <select name="Modelo" id="select-modelo" onchange="aplicarModelo(this.value)">
+                  {% for x in modelos %}
+                    <option value="{{ x.id }}">{{ x.nome_modelo }}</option>
+                  {% endfor %}
                 </select>
               </div>
             </div>
           </div>
 
-          <!-- PAGO -->
           <div class="pago-row">
             <span class="pago-label">Pago</span>
             <label class="toggle-switch">
@@ -965,7 +672,6 @@ dialog h3 {
             </label>
           </div>
 
-          <!-- FORMA DE PAGAMENTO -->
           <div class="field-group">
             <div class="field-label">
               Forma de Pagamento
@@ -985,35 +691,28 @@ dialog h3 {
             </div>
           </div>
 
-          <!-- DIVIDER -->
           <div class="section-divider"><span>Valores</span></div>
 
-          <!-- VALOR + REPASSE -->
           <div class="grid-2">
             <div class="field-group">
               <div class="field-label">Valor <div class="info-icon">i</div></div>
               <div class="valor-input-wrap">
                 <span class="valor-prefix">R$</span>
-                <input type="number" name="valor" id="valor-input"
-                       placeholder="0,00" step="0.01" min="0"
-                       oninput="calcTotal()">
+                <input type="number" name="valor" id="valor-input" placeholder="0,00" step="0.01" min="0" oninput="calcTotal()">
               </div>
             </div>
             <div class="field-group">
               <div class="field-label">Repasse <div class="info-icon">i</div></div>
               <div class="valor-input-wrap">
                 <span class="valor-prefix">R$</span>
-                <input type="number" name="repasse" id="repasse-input"
-                       placeholder="0,00" step="0.01" min="0"
-                       oninput="calcTotal()">
+                <input type="number" name="repasse" id="repasse-input" placeholder="0,00" step="0.01" min="0" oninput="calcTotal()">
               </div>
             </div>
           </div>
 
         </form>
-      </div><!-- /form-body -->
+      </div>
 
-      <!-- TOTAL BAR -->
       <div class="total-bar">
         <div class="total-inner">
           <div>
@@ -1022,40 +721,57 @@ dialog h3 {
           </div>
           <span class="badge badge-accent" id="status-pago">Pendente</span>
         </div>
-        <button type="submit" form="mainForm" class="submit-btn">
-          Salvar informações
-        </button>
+        <!-- MUDANÇA 1: type="button" + onclick em vez de type="submit" -->
+        <button type="button" onclick="salvarInformacoesEAtualizar()" class="submit-btn">Salvar informações</button>
       </div>
+    </div>
 
-    </div><!-- /laudo_form -->
-    
-    <!-- VIEWER VIEW -->
-    <div id="viewer_iframe">
-        <div class="tabs">
-        <button class="tab-btn"  onclick="mostrar('laudo')">📋 Laudo</button>
+    <div id="viewer_iframe" style="display:none;flex-direction:column;">
+      <div class="tabs">
+        <button class="tab-btn" onclick="mostrar('laudo')">📋 Laudo</button>
         <button class="tab-btn" onclick="mostrar('viewer')">🖼 Viewer</button>
-        <button class="tab-btn" onclick=segundoMonitor()>💻 Monitor</button>
-         <span style="color: var(--text-muted); padding: 0 4px; align-self: center;">🔹</span>
+        <button class="tab-btn" onclick="segundoMonitor()">💻 Monitor</button>
+        <span style="color:var(--text-muted);padding:0 4px;align-self:center;">🔹</span>
         <button class="tab-btn active" onclick="setTab(this,'ultrassom')">ULTRASSOM</button>
         <button class="tab-btn" onclick="setTab(this,'ecocardiograma')">ECOCARDIOGRAMA</button>
         <button class="tab-btn" onclick="setTab(this,'procedimentos')">PROCEDIMENTOS</button>
-        <button class="tab-btn" onclick="setTab(this,'radiografia')">RADIOGRAFIA  </button>
- 
-
+        <button class="tab-btn" onclick="setTab(this,'radiografia')">RADIOGRAFIA</button>
       </div>
-
-
-      <iframe src="/viewer/viewer/dicomweb?StudyInstanceUIDs={{ exame.study_instance_uid }}"></iframe>
+      <iframe style="flex:1;border:none;"
+        src="https://viewer-vizionxvet.conexao46.com.br/viewer/viewer?StudyInstanceUIDs={{ exame.study_instance_uid }}">
+      </iframe>
     </div>
 
-  </div><!-- /lado_esquerdo -->
+    <div id="usg_viewer" style="display:none;">
+      <div id="usg_topbar">
+        <button class="usg-tbtn" onclick="mostrar('laudo')">📋 Laudo</button>
+        <button class="usg-tbtn" onclick="usgZoom(0.25)">＋ Zoom</button>
+        <button class="usg-tbtn" onclick="usgZoom(-0.25)">－ Zoom</button>
+        <button class="usg-tbtn" onclick="usgResetZoom()">↺ Reset</button>
+        <button class="usg-tbtn" onclick="usgInserirNoLaudo()">📋 Inserir no laudo</button>
+        <button class="usg-tbtn" onclick="usgRecarregar()">🔄 Recarregar</button>
+        <span id="usg_counter" style="margin-left:auto;font-size:11px;color:var(--text-muted);">—</span>
+      </div>
+      <div id="usg_loading" style="display:none;">
+        <span>⏳ Carregando imagens...</span>
+      </div>
+      <div id="usg_main_img">
+        <button class="usg-nav" id="usg_prev" onclick="usgNav(-1)">‹</button>
+        <img id="usg_canvas" src="" alt="USG" draggable="false">
+        <button class="usg-nav" id="usg_next" onclick="usgNav(1)">›</button>
+        <div id="usg_empty" style="display:none;">
+          <span style="font-size:36px;">🔬</span>
+          <span>Nenhuma imagem encontrada para este exame.</span>
+          <button class="usg-tbtn" onclick="usgRecarregar()" style="margin-top:6px;">Tentar novamente</button>
+        </div>
+      </div>
+      <div id="usg_thumbs"></div>
+    </div>
 
-  <!-- ============================================================
-       RIGHT EDITOR PANEL
-       ============================================================ -->
+  </div>
+
   <div class="editor-panel">
 
-    <!-- TOPBAR -->
     <div class="editor-topbar">
       <span class="topbar-label">Tamanho</span>
       <select id="fontSize" class="topbar-select">
@@ -1080,7 +796,6 @@ dialog h3 {
       </div>
     </div>
 
-    <!-- STATUS BAR -->
     <div class="statusbar">
       <div>
         <span class="status-dot" id="status-dot"></span>
@@ -1089,10 +804,10 @@ dialog h3 {
       <span id="contador">0 palavras</span>
     </div>
 
-    <!-- QUILL EDITOR -->
-    <div id="editor"></div>
+    <div id="editor">
+      <div id="onlyoffice-placeholder"></div>
+    </div>
 
-    <!-- ACTIONS BAR -->
     <div class="actions-bar">
       <button onclick="salvar()"      class="tbtn-action btn-salvar">💾 Salvar</button>
       <button onclick="copiarHTML()"  class="tbtn-action btn-html">📋 HTML</button>
@@ -1105,59 +820,157 @@ dialog h3 {
 
   </div>
 
-</div><!-- /app -->
+</div>
 
-<!-- ============================================================
-     SCRIPTS
-
-
-     ============================================================ -->
-
-     
 <script>
 
-/* ---- SPLIT ---- */
+const TIPO_EXAME = "{{ exame.tipo_exame|default:'' }}".toLowerCase();
+const IS_USG = TIPO_EXAME === 'ultrassom';
+
 Split(['#lado_esquerdo', '.editor-panel'], {
   sizes: [44, 56],
   minSize: 300,
   gutterSize: 5,
   onDragStart: () => {
-    const iframe = document.querySelector('#viewer_iframe iframe');
-    if (iframe) iframe.style.pointerEvents = 'none';
+    document.querySelectorAll('#viewer_iframe iframe, #usg_canvas, #editor iframe')
+      .forEach(el => el.style.pointerEvents = 'none');
   },
   onDragEnd: () => {
-    const iframe = document.querySelector('#viewer_iframe iframe');
-    if (iframe) iframe.style.pointerEvents = 'auto';
+    document.querySelectorAll('#viewer_iframe iframe, #usg_canvas, #editor iframe')
+      .forEach(el => el.style.pointerEvents = 'auto');
   }
 });
 
-/* ---- TABS ---- */
 function setTab(btn, tipo) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('tipo_exame_hidden').value = tipo;
 }
 
-/* ---- TOGGLE VIEW ---- */
 function mostrar(qual) {
-  document.getElementById('laudo_form').style.display    = qual === 'laudo'  ? 'flex'  : 'none';
-  document.getElementById('viewer_iframe').style.display = qual === 'viewer' ? 'block' : 'none';
-}
-mostrar('viewer');
+  document.getElementById('laudo_form').style.display    = 'none';
+  document.getElementById('viewer_iframe').style.display = 'none';
+  document.getElementById('usg_viewer').style.display    = 'none';
 
-/* ---- PAGO TOGGLE STATUS BADGE ---- */
-document.getElementById('pago-toggle').addEventListener('change', function () {
-  const badge = document.getElementById('status-pago');
-  if (this.checked) {
-    badge.textContent = 'Pago';
-    badge.className = 'badge badge-green';
-  } else {
-    badge.textContent = 'Pendente';
-    badge.className = 'badge badge-accent';
+  if (qual === 'laudo') {
+    document.getElementById('laudo_form').style.display = 'flex';
+  } else if (qual === 'viewer') {
+    if (IS_USG) {
+      document.getElementById('usg_viewer').style.display = 'flex';
+      usgInit();
+    } else {
+      document.getElementById('viewer_iframe').style.display = 'flex';
+    }
   }
+}
+mostrar('laudo');
+
+let usgImagens    = [];
+let usgIdx        = 0;
+let usgZoomLevel  = 1;
+let usgCarregado  = false;
+
+async function usgInit() {
+  if (usgCarregado && usgImagens.length > 0) return;
+
+  const loading = document.getElementById('usg_loading');
+  const empty   = document.getElementById('usg_empty');
+  const canvas  = document.getElementById('usg_canvas');
+  const thumbs  = document.getElementById('usg_thumbs');
+
+  loading.style.display = 'flex';
+  empty.style.display   = 'none';
+  canvas.style.display  = 'none';
+  thumbs.innerHTML      = '';
+
+  try {
+    const res  = await fetch('/dicom-para-imagens/{{ exame.id }}/');
+    const data = await res.json();
+    usgImagens = data.imagens || [];
+  } catch(e) {
+    console.warn('[USG] Erro ao buscar imagens:', e);
+    usgImagens = [];
+  }
+
+  loading.style.display = 'none';
+
+  if (usgImagens.length === 0) {
+    empty.style.display  = 'flex';
+    canvas.style.display = 'none';
+    document.getElementById('usg_counter').textContent = '0 imagens';
+    return;
+  }
+
+  usgCarregado = true;
+  usgIdx       = 0;
+  usgZoomLevel = 1;
+
+  usgImagens.forEach((url, i) => {
+    const img = document.createElement('img');
+    img.src = url;
+    img.className = 'usg-thumb' + (i === 0 ? ' active' : '');
+    img.onclick = () => usgGoTo(i);
+    thumbs.appendChild(img);
+  });
+
+  canvas.style.display = 'block';
+  usgGoTo(0);
+}
+
+function usgGoTo(idx) {
+  if (usgImagens.length === 0) return;
+  idx = (idx + usgImagens.length) % usgImagens.length;
+  usgIdx = idx;
+
+  const canvas = document.getElementById('usg_canvas');
+  canvas.src = usgImagens[idx];
+  usgZoomLevel = 1;
+  canvas.style.transform = 'scale(1)';
+
+  document.querySelectorAll('.usg-thumb').forEach((t, i) => {
+    t.classList.toggle('active', i === idx);
+  });
+
+  const ativaTh = document.querySelectorAll('.usg-thumb')[idx];
+  if (ativaTh) ativaTh.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+
+  document.getElementById('usg_counter').textContent =
+    (idx + 1) + ' / ' + usgImagens.length;
+}
+
+function usgNav(delta)    { usgGoTo(usgIdx + delta); }
+function usgResetZoom()   { usgZoomLevel = 1; document.getElementById('usg_canvas').style.transform = 'scale(1)'; }
+function usgZoom(delta)   {
+  usgZoomLevel = Math.min(Math.max(usgZoomLevel + delta, 0.5), 4);
+  document.getElementById('usg_canvas').style.transform = `scale(${usgZoomLevel})`;
+}
+function usgRecarregar()  { usgCarregado = false; usgImagens = []; usgInit(); }
+
+document.getElementById('usg_main_img').addEventListener('wheel', e => {
+  if (document.getElementById('usg_viewer').style.display === 'none') return;
+  e.preventDefault();
+  usgZoom(e.deltaY < 0 ? 0.15 : -0.15);
+}, { passive: false });
+
+document.addEventListener('keydown', e => {
+  if (document.getElementById('usg_viewer').style.display === 'none') return;
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   usgNav(-1);
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') usgNav(1);
 });
 
-/* ---- CALC TOTAL ---- */
+function usgInserirNoLaudo() {
+  const url = usgImagens[usgIdx];
+  if (!url || !docEditor) return;
+  docEditor.insertImage({ c: 'add', images: [{ fileType: 'png', url: url }] });
+  mostrar('laudo');
+}
+
+document.getElementById('pago-toggle').addEventListener('change', function () {
+  const badge = document.getElementById('status-pago');
+  if (this.checked) { badge.textContent = 'Pago';    badge.className = 'badge badge-green';  }
+  else              { badge.textContent = 'Pendente'; badge.className = 'badge badge-accent'; }
+});
+
 function calcTotal() {
   const valor   = parseFloat(document.getElementById('valor-input').value)   || 0;
   const repasse = parseFloat(document.getElementById('repasse-input').value) || 0;
@@ -1166,108 +979,100 @@ function calcTotal() {
     'R$ ' + total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-/* ---- QUILL ---- */
-var quill = new Quill('#editor', {
-  theme: 'snow',
-  modules: {
-    toolbar: [
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ list: 'ordered' }, { list: 'bullet' }],
-      [{ align: [] }],
-      [{ header: [1, 2, 3, false] }],
-      ['clean']
-    ],
-    imageResize: { modules: ['Resize', 'DisplaySize', 'Toolbar'] }
-  }
-});
+var docEditor = new DocsAPI.DocEditor("onlyoffice-placeholder", {
+  documentType: "word",
+  document: {
+    fileType: "docx",
+    key: "laudo_{{ exame.id }}_{% now 'U' %}",
+    title: "Laudo - {{ exame.paciente.nome }}",
+    url: "https://pacsvizionxvet.conexao46.com.br/blank-docx/?modelo=20&exame_id={{ exame.id }}",
+    permissions: { edit: true, download: true, print: true }
+  },
+  editorConfig: {
+    callbackUrl: "https://pacsvizionxvet.conexao46.com.br/onlyoffice-callback/{{ exame.id }}/",
+    mode: "edit",
+    lang: "pt-BR",
+    user: { id: "{{ exame.id }}", name: "Médico" },
+    customization: {
+      autosave: false,
+      compactHeader: true,
+      uiTheme: "theme-dark",
+      toolbarNoTabs: false,
+      help: false,
+      about: false,
+      goback: { visible: false },
+    },
+  },
+  height: "100%",
+  width: "100%",
+  events: {
+    onDocumentStateChange: function(e) {
+      if (e.data) setStatus('editing');
+    },
+    onDownloadAs: async function(e) {
+      const pdfUrl = e.data.url;
+      console.log('[OnlyOffice] PDF URL:', pdfUrl);
 
-quill.on('text-change', function () {
-  const palavras = quill.getText().trim().split(/\s+/).filter(Boolean).length;
-  document.getElementById('contador').innerText = palavras + ' palavras';
-  setStatus('editing');
+      const imgsRes = await fetch('/dicom-para-imagens/{{ exame.id }}/');
+      const imgsData = await imgsRes.json();
+      const imagens = imgsData.imagens || [];
+
+      const res = await fetch('/gerar-pdf-completo/{{ exame.id }}/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        body: JSON.stringify({ pdf_url: pdfUrl, imagens: imagens }),
+      });
+
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      } else {
+        alert('Erro ao gerar PDF completo.');
+      }
+
+      document.querySelector('.btn-pdf').disabled = false;
+      document.querySelector('.btn-pdf').textContent = '📄 PDF';
+    },
+  }
 });
 
 function setStatus(state) {
   const dot  = document.getElementById('status-dot');
   const text = document.getElementById('status');
   if (state === 'editing') {
-    dot.className = 'status-dot editing';
-    text.innerText = 'Editando...';
+    dot.className = 'status-dot editing'; text.innerText = 'Editando...';
   } else if (state === 'saved') {
-    dot.className = 'status-dot saved';
-    text.innerText = 'Salvo ✅';
+    dot.className = 'status-dot saved'; text.innerText = 'Salvo ✅';
   } else if (state === 'error') {
-    dot.className = 'status-dot';
-    dot.style.background = 'var(--red)';
-    text.innerText = 'Erro ao salvar';
+    dot.className = 'status-dot'; dot.style.background = 'var(--red)'; text.innerText = 'Erro ao salvar';
   } else {
-    dot.className = 'status-dot';
-    text.innerText = 'Não salvo';
+    dot.className = 'status-dot'; text.innerText = 'Não salvo';
   }
 }
 
-function setSize() {
-  quill.format('size', document.getElementById('fontSize').value);
-}
+function setSize() { }
 
-/* ---- PDF ---- */
 async function gerarPDF() {
-  const { jsPDF } = window.jspdf;
-  const doc     = new jsPDF('p', 'mm', 'a4');
-  const pageW   = doc.internal.pageSize.getWidth();
-  const pageH   = doc.internal.pageSize.getHeight();
-  const margin  = 10;
-  const usableW = pageW - margin * 2;
-  let   currentY = margin;
-
-  const element  = document.querySelector('#editor .ql-editor');
-  const canvas   = await html2canvas(element, { scale: 2, useCORS: true });
-  const laudoImg = canvas.toDataURL('image/jpeg', 0.98);
-  const laudoH   = (canvas.height * usableW) / canvas.width;
-  doc.addImage(laudoImg, 'JPEG', margin, currentY, usableW, laudoH);
-  currentY += laudoH + 5;
+  const btn = document.querySelector('.btn-pdf');
+  btn.disabled = true;
+  btn.textContent = '⏳ Gerando...';
 
   try {
-    const res  = await fetch('/dicom-para-imagens/{{ exame.id }}/');
-    const data = await res.json();
-    for (const imgSrc of data.imagens) {
-      const props = doc.getImageProperties(imgSrc);
-      const imgH  = (props.height * usableW) / props.width;
-      if (currentY + imgH > pageH - margin) { doc.addPage(); currentY = margin; }
-      doc.addImage(imgSrc, 'PNG', margin, currentY, usableW, imgH);
-      currentY += imgH + 5;
-    }
-  } catch(e) { console.warn('Sem imagens DICOM', e); }
-
-  const blob = doc.output('blob');
-  Object.assign(document.createElement('a'), {
-    href: URL.createObjectURL(blob), download: 'laudo.pdf'
-  }).click();
-
-  const reader = new FileReader();
-  reader.readAsDataURL(blob);
-  reader.onloadend = () => {
-    fetch('/salvar-pdf/{{ exame.id }}/', {
+    docEditor.downloadAs('pdf');
+    await fetch('/atualizar_status_laudo_editor/{{ exame.id }}/', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'X-CSRFToken': getCookie('csrftoken')
-      },
-      body: 'pdf_base64=' + encodeURIComponent(reader.result)
-    }).then(() => setStatus('saved'));
-  };
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+      body: JSON.stringify({ status: 'Laudado' }),
+    });
+  } catch(e) {
+    alert('Erro ao gerar PDF: ' + e.message);
+  }
 
-  await fetch('/atualizar_status_laudo_editor/{{ exame.id }}/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': getCookie('csrftoken')
-    },
-    body: JSON.stringify({ status: 'Laudado' })
-  });
+  btn.disabled = false;
+  btn.textContent = '📄 PDF';
 }
 
-/* ---- COOKIE ---- */
 function getCookie(name) {
   for (const c of (document.cookie || '').split(';')) {
     const t = c.trim();
@@ -1276,30 +1081,143 @@ function getCookie(name) {
   return null;
 }
 
-/* ---- FILE INPUT ---- */
 document.getElementById('fileInput').onchange = function () {
-  const r = new FileReader();
-  r.onload = e => quill.insertEmbed(quill.getSelection(true).index, 'image', e.target.result);
-  r.readAsDataURL(this.files[0]);
+  const file = this.files[0];
+  if (!file || !docEditor) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const blobUrl = URL.createObjectURL(file);
+    docEditor.insertImage({ c: 'add', images: [{ fileType: file.name.split('.').pop(), url: blobUrl }] });
+  };
+  reader.readAsDataURL(file);
 };
 
-/* ---- PASTE IMAGE ---- */
 document.addEventListener('paste', e => {
   for (const item of e.clipboardData.items) {
     if (item.type.indexOf('image') !== -1) {
       e.preventDefault();
-      const r = new FileReader();
-      r.onload = ev => quill.insertEmbed(quill.getSelection(true).index, 'image', ev.target.result);
-      r.readAsDataURL(item.getAsFile());
+      const file    = item.getAsFile();
+      const blobUrl = URL.createObjectURL(file);
+      if (docEditor) {
+        docEditor.insertImage({ c: 'add', images: [{ fileType: 'png', url: blobUrl }] });
+      }
     }
   }
 });
 
-/* ---- ACTIONS ---- */
-function copiarHTML()  { navigator.clipboard.writeText(quill.root.innerHTML); }
-function copiarTexto() { navigator.clipboard.writeText(quill.getText()); }
+function copiarHTML()  { }
+function copiarTexto() { }
 function abrirImagem() { document.getElementById('fileInput').click(); }
-function limpar() { quill.setText(''); setStatus('none'); }
+function limpar()      { if (docEditor) docEditor.destroyEditor(); initEditor(); }
+
+var docEditor;
+function initEditor() {
+  docEditor = new DocsAPI.DocEditor("onlyoffice-placeholder", {
+    events: {
+      onDocumentStateChange: function(e) {
+        if (e.data) setStatus('editing');
+      },
+      onError: function(e) {
+        console.error('[OnlyOffice] ERRO:', JSON.stringify(e.data));
+      },
+      onAppReady: function() {
+        console.log('[OnlyOffice] editor montado com sucesso');
+      }
+    }
+  });
+}
+
+function salvar() {
+  fetch('/salvar-laudo/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+    body: JSON.stringify({
+      laudoHTML: '<p>Laudo editado no OnlyOffice — exame {{ exame.id }}</p>',
+      studyInstanceUid: '{{ exame.study_instance_uid }}'
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    setStatus('saved');
+    const link = window.location.origin + '/portal/' + data.codigo;
+    const elLink = document.getElementById('linkMensagem');
+    elLink.href        = link;
+    elLink.textContent = link;
+    document.getElementById('codigoMensagem').innerText = data.codigo;
+    document.getElementById('modalCodigo').value = data.codigo;
+    document.getElementById('modalLink').value   = link;
+    document.getElementById('modalSalvo').showModal();
+  })
+  .catch(() => setStatus('error'));
+}
+
+/* ================================================================
+   MUDANÇA 2: salvarInformacoesEAtualizar
+   Salva o form via fetch, depois recarrega o editor com dados atualizados
+   ================================================================ */
+function salvarInformacoesEAtualizar() {
+  const form = document.getElementById('mainForm');
+  const data = new FormData(form);
+  const btn  = document.querySelector('.submit-btn');
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Salvando...';
+
+  fetch(form.action, {
+    method: 'POST',
+    body: data,
+  })
+  .then(r => {
+    if (r.ok) {
+      const modeloId = document.getElementById('select-modelo').value;
+      if (modeloId) {
+        aplicarModelo(modeloId);
+      } else {
+        if (docEditor) docEditor.destroyEditor();
+        docEditor = new DocsAPI.DocEditor("onlyoffice-placeholder", {
+          documentType: "word",
+          document: {
+            fileType: "docx",
+            key: "laudo_{{ exame.id }}_" + Date.now(),
+            title: "Laudo - {{ exame.paciente.nome }}",
+            url: `https://pacsvizionxvet.conexao46.com.br/blank-docx/?modelo=20&exame_id={{ exame.id }}&t=${Date.now()}`,
+            permissions: { edit: true, download: true, print: true }
+          },
+          editorConfig: {
+            callbackUrl: "https://pacsvizionxvet.conexao46.com.br/onlyoffice-callback/{{ exame.id }}/",
+            mode: "edit", lang: "pt-BR",
+            user: { id: "{{ exame.id }}", name: "Médico" },
+            customization: { autosave: false, compactHeader: true, uiTheme: "theme-dark", toolbarNoTabs: false, help: false, about: false, goback: { visible: false } },
+          },
+          height: "100%", width: "100%",
+          events: { onDocumentStateChange: function(e) { if (e.data) setStatus('editing'); } }
+        });
+      }
+      setStatus('saved');
+    }
+  })
+  .catch(() => setStatus('error'))
+  .finally(() => {
+    btn.disabled = false;
+    btn.textContent = 'Salvar informações';
+  });
+}
+
+function copiarMensagem() {
+  const codigo = document.getElementById('modalCodigo').value;
+  const link   = document.getElementById('modalLink').value;
+  const texto  =
+    `Olá! Tudo bem? 😊\n\n` +
+    `O laudo do seu pet já está disponível para consulta.\n\n` +
+    `🔑 Código de acesso: ${codigo}\n\n` +
+    `🔗 ${link}\n\n` +
+    `Qualquer dúvida, estamos à disposição.`;
+  navigator.clipboard.writeText(texto);
+  const btn = document.querySelector('#modalSalvo .btn-salvar');
+  const orig = btn.innerText;
+  btn.innerText = '✅ Copiado!';
+  setTimeout(() => btn.innerText = orig, 2000);
+}
 
 function salvarModelo() {
   fetch('/criar_modelos/', { method: 'POST', body: new FormData(document.getElementById('formNovoModelo')) })
@@ -1325,53 +1243,71 @@ function abrirClinica() {
 }
 
 function passar_para_editor(n,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12) {
-  quill.root.innerHTML =
-    '<p><strong>Paciente: {{ exame.paciente.nome }}</strong></p>' +
-    [c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12].map(c => `<p>${c}</p>`).join('');
   document.getElementById('dialogModelos').close();
+  alert('Modelo selecionado. Integração de modelos com OnlyOffice será implementada na próxima etapa.');
 }
 
-/* ---- SALVAR ---- */
-function salvar() {
-  fetch('/salvar-laudo/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': getCookie('csrftoken')
+function segundoMonitor() { window.open('/view_monitor/{{ exame.id }}/', '_blank'); }
+
+function aplicarModelo(modeloId) {
+  if (!modeloId) return;
+  if (docEditor) docEditor.destroyEditor();
+
+  docEditor = new DocsAPI.DocEditor("onlyoffice-placeholder", {
+    documentType: "word",
+    document: {
+      fileType: "docx",
+      key: "laudo_{{ exame.id }}_" + modeloId + "_" + Date.now(),
+      title: "Laudo - {{ exame.paciente.nome }}",
+      url: `https://pacsvizionxvet.conexao46.com.br/blank-docx/?modelo=${modeloId}&exame_id={{ exame.id }}&t=${Date.now()}`,
+      permissions: { edit: true, download: true, print: true }
     },
-    body: JSON.stringify({
-      laudoHTML: quill.root.innerHTML,
-      studyInstanceUid: '{{ exame.study_instance_uid }}'
-    })
-  })
-  .then(r => r.json())
-  .then(data => {
-    setStatus('saved');
-    document.getElementById('modalCodigo').value = data.codigo;
-    document.getElementById('modalLink').value   = window.location.origin + '/portal/' + data.codigo;
-    document.getElementById('modalSalvo').showModal();
-  })
-  .catch(() => setStatus('error'));
-}
-document.addEventListener('keydown', e => {
-  if (e.ctrlKey && e.key === 's') { e.preventDefault(); salvar(); }
-});
+    editorConfig: {
+      callbackUrl: "https://pacsvizionxvet.conexao46.com.br/onlyoffice-callback/{{ exame.id }}/",
+      mode: "edit",
+      lang: "pt-BR",
+      user: { id: "{{ exame.id }}", name: "Médico" },
+      customization: {
+        autosave: false,
+        compactHeader: true,
+        uiTheme: "theme-dark",
+        toolbarNoTabs: false,
+        help: false,
+        about: false,
+        goback: { visible: false },
+      },
+    },
+    height: "100%",
+    width: "100%",
+    events: {
+      onDocumentStateChange: function(e) { if (e.data) setStatus('editing'); },
+      onDownloadAs: async function(e) {
+        const pdfUrl = e.data.url;
+        const imgsRes = await fetch('/dicom-para-imagens/{{ exame.id }}/');
+        const imgsData = await imgsRes.json();
+        const imagens = imgsData.imagens || [];
+        const res = await fetch('/gerar-pdf-completo/{{ exame.id }}/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+          body: JSON.stringify({ pdf_url: pdfUrl, imagens: imagens }),
+        });
+        if (res.ok) {
+          const blob = await res.blob();
+          window.open(URL.createObjectURL(blob), '_blank');
+        } else {
+          alert('Erro ao gerar PDF completo.');
+        }
+        document.querySelector('.btn-pdf').disabled = false;
+        document.querySelector('.btn-pdf').textContent = '📄 PDF';
+      },
+    }
+  });
 
-const modelosData = {
-  {% for x in modelos %}
-  "{{ x.id }}": ["{{ x.nome_modelo }}","{{ x.campo2 }}","{{ x.campo3 }}","{{ x.campo4 }}","{{ x.campo5 }}","{{ x.campo6 }}","{{ x.campo7 }}","{{ x.campo8 }}","{{ x.campo9 }}","{{ x.campo10 }}","{{ x.campo11 }}","{{ x.campo12 }}"],
-  {% endfor %}
-};
-function segundoMonitor(){
-window.open('/view_monitor/{{ exame.id }}/', '_blank')
-}
-function aplicarModelo(id) {
-  const m = modelosData[id];
-  if (!m) return;
-  passar_para_editor(...m);
+  if (document.getElementById('dialogModelos').open) {
+    document.getElementById('dialogModelos').close();
+  }
 }
 
-/* ---- COPIAR LINK ---- */
 function copiarLink() {
   navigator.clipboard.writeText(document.getElementById('modalLink').value);
   const btn = document.querySelector('#modalSalvo .btn-copiar');
@@ -1380,16 +1316,12 @@ function copiarLink() {
   setTimeout(() => btn.innerText = orig, 2000);
 }
 
-/* ---- AUTO-SAVE ---- */
 function salvarSilencioso() {
   fetch('/salvar-laudo/', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': getCookie('csrftoken')
-    },
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
     body: JSON.stringify({
-      laudoHTML: quill.root.innerHTML,
+      laudoHTML: '<p>Laudo editado no OnlyOffice — exame {{ exame.id }}</p>',
       studyInstanceUid: '{{ exame.study_instance_uid }}'
     })
   })
@@ -1402,17 +1334,12 @@ setInterval(() => {
   if (document.getElementById('status').innerText === 'Editando...') salvarSilencioso();
 }, 10000);
 
-/* ---- CTRL+S ---- */
-document.addEventListener('keydown', e => {
-  if (e.ctrlKey && e.key === 's') { e.preventDefault(); salvar(); }
-});
 function abrirVeterinario() {
   fetch('/listar_veterinarios/').then(r => r.text()).then(html => {
     document.getElementById('dialogModelos').innerHTML = html;
     document.getElementById('dialogModelos').showModal();
   });
 }
-
 function salvarVeterinario() {
   fetch('/criar_veterinario/', { method: 'POST', body: new FormData(document.getElementById('formNovoVet')) })
   .then(r => r.text())
@@ -1420,7 +1347,6 @@ function salvarVeterinario() {
 }
 function selecionarVeterinario(id, nome) {
   const sel = document.getElementById('select-vet-pedidor');
-  // Adiciona a option se não existir
   if (!sel.querySelector(`option[value="${id}"]`)) {
     const opt = new Option(nome, id);
     sel.add(opt);
@@ -1428,6 +1354,17 @@ function selecionarVeterinario(id, nome) {
   sel.value = id;
   document.getElementById('dialogModelos').close();
 }
+
+const modelosData = {
+  {% for x in modelos %}
+  "{{ x.id }}": ["{{ x.nome_modelo }}","{{ x.campo2 }}","{{ x.campo3 }}","{{ x.campo4 }}","{{ x.campo5 }}","{{ x.campo6 }}","{{ x.campo7 }}","{{ x.campo8 }}","{{ x.campo9 }}","{{ x.campo10 }}","{{ x.campo11 }}","{{ x.campo12 }}"],
+  {% endfor %}
+};
+
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.key === 's') { e.preventDefault(); salvar(); }
+});
+
 </script>
 </body>
 </html>

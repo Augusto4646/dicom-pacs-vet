@@ -2,7 +2,7 @@ from django.urls import path
 from . import views
 from django.conf import settings
 from django.conf.urls.static import static
-
+from .dicom_utils import get_jpg_urls_for_study
 urlpatterns = [
 
     # Autenticação
@@ -47,17 +47,45 @@ urlpatterns = [
     path('editar_clinica/<int:clinica_id>/', views.editar_clinica, name='editar_clinica'),
 
     path('criar_modelos/',views.criar_modelos,name='criar_modelos'),
-    path('atualizar_status/<int:exame_id>/',views.atualizar_status),
+    path('atualizar_status/<int:exame_id>/', views.atualizar_status),
     path('atualizar_status_laudo_editor/<int:exame_id>/', views.atualizar_status_laudo_editor),
-    path('dashboard_visual/',views.dashboard_visual,name='dashboard_visual'),
+    path('atualizar_tipo_exame/<int:exame_id>/', views.atualizar_tipo_exame, name='atualizar_tipo_exame'),    path('dashboard_visual/',views.dashboard_visual,name='dashboard_visual'),
     path('editar_cabecalho/<int:exame_id>/', views.editar_cabecalho, name='editar_cabecalho'),
     path('pagina_laudos/',views.pagina_laudos,name='pagina_laudos'),
     path('listar_veterinarios/', views.listar_veterinarios,name='listar_veterinarios'),
     path('criar_veterinario/', views.criar_veterinario,name='criar_veterinario'),
     path('deletar_modelo/<int:modelo_id>/', views.deletar_modelo),
-    path('deletar_clinica/<int:clinica_id/',views.deletar_clinica),
+    path('deletar_clinica/<int:clinica_id>/',views.deletar_clinica),
     path('deletar_veterinario/<int:veterinario_id>/',views.deletar_veterinario),   
     path('deletar_exame/<int:exame_id>/', views.deletar_exame, name='deletar_exame'),
+    path(
+    'financeiro/',
+    views.financeiro,
+    name='financeiro'
+    ),
+    path('financeiro/excluir/<int:id>/', views.excluir_lancamento, name='excluir_lancamento'),
+    path('financeiro/importar/',views.importar_lancamentos, name='importar_lancamentos'),
+    path('dicom-para-imagens/<int:exame_id>/',  views.dicom_para_imagens,   name='dicom_para_imagens'),
+    path('get-modelo-html/<int:modelo_id>/<int:exame_id>/', views.get_modelo_html, name='get_modelo_html'),
+    path('blank-docx/', views.blank_docx, name='blank_docx'),
+    path('modelos/docx/<int:modelo_id>/', views.servir_docx_modelo, name='servir_docx_modelo'),
+    path(
+    "gerar-pdf-completo/<int:exame_id>/",
+    views.gerar_pdf_completo,
+    name="gerar_pdf_completo"
 
+),
+path(
+    "onlyoffice-callback/<int:exame_id>/",
+    views.onlyoffice_callback,
+    name="onlyoffice_callback"
+),
+
+path(
+    'forcar-save-onlyoffice/<int:exame_id>/',
+    views.forcar_save_onlyoffice,
+    name='forcar_save_onlyoffice'
+),
+path('check-docx/<int:exame_id>/', views.check_docx, name='check_docx'),
 
 ]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

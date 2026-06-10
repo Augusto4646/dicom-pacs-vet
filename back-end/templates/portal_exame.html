@@ -2,120 +2,283 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Exame</title>
-
+<title>Resultado do Exame</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
-
-body{
-font-family:Arial;
-	background:#f5f5f5;
-margin:0;
-padding:40px;
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: Arial, sans-serif;
+  background: #f0f4f8;
+  padding: 30px 20px;
+  min-height: 100vh;
 }
-
-.container{
-max-width:900px;
-margin:auto;
-background:white;
-padding:30px;
-border-radius:10px;
-box-shadow:0 10px 25px rgba(0,0,0,0.1);
+.container {
+  max-width: 960px;
+  margin: auto;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  overflow: hidden;
 }
-
-h1{
-margin-top:0;
+.header {
+  background: #00a3a3;
+  color: white;
+  padding: 24px 30px;
 }
-
-.info{
-margin-bottom:20px;
+.header h1 { font-size: 22px; margin-bottom: 6px; }
+.header p  { font-size: 14px; opacity: 0.85; }
+.info-bar {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding: 16px 30px;
+  background: #f8fafa;
+  border-bottom: 1px solid #e8e8e8;
+  font-size: 14px;
+  color: #444;
 }
-
-.laudo{
-background:#fafafa;
-padding:20px;
-border-radius:8px;
-border:1px solid #eee;
+.info-bar span strong { color: #222; }
+.actions {
+  display: flex;
+  gap: 12px;
+  padding: 16px 30px;
+  border-bottom: 1px solid #eee;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start; /* Garante o alinhamento dos botões lado a lado */
 }
-
-button{
-margin-top:20px;
-padding:10px 16px;
-background:#00a3a3;
-border:none;
-color:white;
-border-radius:6px;
-cursor:pointer;
+.btn {
+  padding: 10px 20px;
+  border-radius: 6px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
-
-button:hover{
-background:#008c8c;
+.btn-download { background: #2563eb; color: white; }
+.btn-viewer   { background: #00a3a3; color: white; }
+.btn:hover { opacity: 0.88; }
+.pdf-wrapper {
+  padding: 20px 30px 30px;
 }
-
-.viewer{
-margin-top:30px;
-height:600px;
-border:1px solid #ddd;
+.pdf-wrapper h3 {
+  font-size: 15px;
+  color: #555;
+  margin-bottom: 12px;
 }
-
-.viewer iframe{
-width:100%;
-height:100%;
-border:none;
+#pdf-container {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #525659;
 }
-
+#pdf-canvas-wrap {
+  overflow-y: auto;
+  max-height: 75vh;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+#pdf-canvas {
+  display: block;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  max-width: 100%;
+}
+#pdf-nav {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding: 10px;
+  background: #3d4043;
+  border-top: 1px solid #555;
+}
+#pdf-nav button {
+  padding: 6px 16px;
+  border-radius: 4px;
+  border: 1px solid #666;
+  background: #525659;
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+}
+#pdf-nav button:hover { background: #666; }
+#pdf-page-info {
+  font-size: 13px;
+  color: #ccc;
+  min-width: 100px;
+  text-align: center;
+}
+#pdf-loading {
+  color: #ccc;
+  padding: 40px;
+  text-align: center;
+  font-size: 14px;
+}
+.no-pdf {
+  padding: 40px;
+  text-align: center;
+  color: #888;
+  font-size: 14px;
+}
+#ohif-container {
+  width: 100%;
+  height: 70vh;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 12px;
+}
+#ohif-container iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
 </style>
+</head>
+<body>
+
 <div class="container">
 
-<h1>Resultado do exame</h1>
+  <div class="header">
+    <h1>📋 Resultado do Exame</h1>
+    <p>Vizion X Vet — Radiologia Veterinária</p>
+  </div>
 
-<div class="info">
-<strong>Código:</strong> {{ exame.codigo_acesso }} <br>
-<strong>Paciente:</strong> {{ exame.paciente.nome }} <br>
-</div>
+  <div class="info-bar">
+    <span><strong>Código:</strong> {{ exame.codigo_acesso }}</span>
+    <span><strong>Paciente:</strong> {{ exame.paciente.nome }}</span>
+    {% if exame.paciente.nome_tutor %}
+    <span><strong>Tutor:</strong> {{ exame.paciente.nome_tutor }}</span>
+    {% endif %}
+    {% if exame.tipo_exame %}
+    <span><strong>Exame:</strong> {{ exame.tipo_exame }}</span>
+    {% endif %}
+  </div>
 
-<h3>Laudo</h3>
-
-<div class="laudo">
-{{ exame.laudo_html|safe }}
-</div>
-
-<!-- 🔥 BOTÕES -->
-<div style="margin-top:20px; display:flex; gap:10px; flex-wrap:wrap;">
-
-<button onclick="mostrarImagens()">
-    Ver imagens
-</button>
-
-{% if exame.pdf %}
-<a href="{{ exame.pdf.url }}" target="_blank" style="text-decoration:none;">
-    <span style="
-        display:inline-block;
-        padding:10px 16px;
-        background:#007bff;
-        color:white;
-        border-radius:6px;
-        cursor:pointer;
-    ">
-        Baixar PDF
+  <div class="actions">
+    {% if exame.pdf %}
+    <a class="btn btn-download" href="{{ exame.pdf.url }}" target="_blank" download>
+      ⬇️ Baixar PDF
+    </a>
+    {% else %}
+    <span style="font-size:13px;color:#888;">
+      O laudo ainda não foi finalizado.
     </span>
-</a>
-{% endif %}
+    {% endif %}
 
-</div>
+    <button
+        id="btn-ohif"
+        class="btn btn-viewer"
+        onclick="abrirOHIF()">
+        👁️ Visualizar Imagens
+    </button>
+  </div>
 
-<!-- 🔥 VIEWER -->
-<div id="viewer" class="viewer" style="display:none; margin-top:20px;">
+  {% if exame.pdf %}
+  <div class="pdf-wrapper">
+    <h3>Visualização do laudo</h3>
+    <div id="pdf-container">
+      <div id="pdf-canvas-wrap">
+        <div id="pdf-loading">⏳ Carregando PDF...</div>
+        <canvas id="pdf-canvas" style="display:none;"></canvas>
+      </div>
+      <div id="pdf-nav">
+        <button onclick="pdfPrevPage()">← Anterior</button>
+        <span id="pdf-page-info">—</span>
+        <button onclick="pdfNextPage()">Próxima →</button>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="pdf-wrapper">
+    <div class="no-pdf">
+      <p style="font-size:36px;margin-bottom:12px;">🔬</p>
+      <p>O PDF do laudo ainda não está disponível.</p>
+      <p style="margin-top:6px;font-size:12px;">Entre em contato com a clínica para mais informações.</p>
+    </div>
+  </div>
+  {% endif %}
 
-<iframe 
-    src="/viewer/viewer/dicomweb?StudyInstanceUIDs={{ exame.study_instance_uid }}">
-</iframe>
+  <div class="pdf-wrapper" style="padding-top:0;">
+    <div id="ohif-container" style="display:none; margin-top:12px;">
+      <h3>Visualização das Imagens DICOM</h3>
+      <iframe
+        id="ohif-frame"
+        allowfullscreen>
+      </iframe>
+    </div>
+  </div>
 
-</div>
+</div> <script>
+function abrirOHIF() {
+    const container = document.getElementById('ohif-container');
+    const iframe = document.getElementById('ohif-frame');
+    const btn = document.getElementById('btn-ohif');
 
-</div>
-
-<script>
-function mostrarImagens(){
-    document.getElementById("viewer").style.display = "block";
+    if (container.style.display === 'none') {
+        if (!iframe.src) {
+            iframe.src = "https://viewer-vizionxvet.conexao46.com.br/viewer/viewer?StudyInstanceUIDs={{ exame.study_instance_uid }}";
+        }
+        container.style.display = 'block';
+        btn.textContent = '❌ Ocultar Imagens';
+    } else {
+        container.style.display = 'none';
+        btn.textContent = '👁️ Visualizar Imagens';
+    }
 }
 </script>
+
+{% if exame.pdf %}
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+let pdfDoc = null;
+let pdfPage = 1;
+
+pdfjsLib.getDocument('{{ exame.pdf.url }}').promise.then(doc => {
+  pdfDoc = doc;
+  document.getElementById('pdf-loading').style.display = 'none';
+  document.getElementById('pdf-canvas').style.display = 'block';
+  renderPage(1);
+}).catch(err => {
+  document.getElementById('pdf-loading').textContent = 'Erro ao carregar o PDF.';
+  console.error(err);
+});
+
+function renderPage(num) {
+  pdfDoc.getPage(num).then(page => {
+    const canvas = document.getElementById('pdf-canvas');
+    const ctx    = canvas.getContext('2d');
+    const wrap   = document.getElementById('pdf-canvas-wrap');
+    const scale  = (wrap.clientWidth - 40) / page.getViewport({ scale: 1 }).width;
+    const vp     = page.getViewport({ scale: Math.max(scale, 1) });
+
+    canvas.width  = vp.width;
+    canvas.height = vp.height;
+
+    page.render({ canvasContext: ctx, viewport: vp });
+
+    document.getElementById('pdf-page-info').textContent =
+      `Página ${num} de ${pdfDoc.numPages}`;
+    pdfPage = num;
+  });
+}
+
+function pdfPrevPage() { if (pdfPage > 1) renderPage(pdfPage - 1); }
+function pdfNextPage() { if (pdfDoc && pdfPage < pdfDoc.numPages) renderPage(pdfPage + 1); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft')  pdfPrevPage();
+  if (e.key === 'ArrowRight') pdfNextPage();
+});
+</script>
+{% endif %}
+
+</body>
+</html>

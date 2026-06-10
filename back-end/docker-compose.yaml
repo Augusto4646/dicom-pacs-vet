@@ -1,3 +1,4 @@
+
 services:
 
   orthanc:
@@ -15,6 +16,7 @@ services:
     volumes:
       - ./orthanc-custom/orthanc.json:/orthanc/orthanc.json
       - ./orthanc-dicomweb/Build/libOrthancDicomWeb.so:/orthanc/libOrthancDicomWeb.so
+      - ./orthanc-storage:/orthanc/OrthancStorage
 
     networks:
       - orthanc-network
@@ -41,14 +43,12 @@ services:
 
 
   ohif:
-    image: ohif/app:v3.9.2
+    build:
+      context: ./Viewers
     container_name: ohif
 
     ports:
-      - "3000:80"
-
-    volumes:
-      - ./ohif-config/app-config.js:/usr/share/nginx/html/app-config.js
+      - "45779:45779"
 
     depends_on:
       - orthanc

@@ -22,9 +22,9 @@ window.config = {
         friendlyName: 'Orthanc',
         name: 'orthanc',
 
-        qidoRoot: 'https://orthanc.conexao46.com.br/dicom-web',
-        wadoRoot: 'https://orthanc.conexao46.com.br/dicom-web',
-        wadoUriRoot: 'https://orthanc.conexao46.com.br/wado',
+        wadoUriRoot: "/orthanc/wado",
+        qidoRoot: "/orthanc/dicom-web",
+        wadoRoot: "/orthanc/dicom-web",
       },
     },
   ],

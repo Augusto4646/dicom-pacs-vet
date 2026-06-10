@@ -106,7 +106,7 @@ AUTH_PASSWORD_VALIDATORS = [
 CSRF_TRUSTED_ORIGINS = [
     'https://vizionxvet.conexao46.com.br',
     'https://www.vizionxvet.conexao46.com.br',
-    'https://pacsvizionxvet.conexao46.com.br/'
+    'https://pacsvizionxvet.conexao46.com.br'
 ]
 
 
@@ -137,3 +137,4 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 LOGIN_REDIRECT_URL = "/dashboard/"
 LOGOUT_REDIRECT_URL = "/"
+X_FRAME_OPTIONS = 'SAMEORIGIN'

@@ -1,0 +1,630 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>VizionVet — Financeiro</title>
+
+<link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+
+<style>
+.sidebar {
+    width: 240px;
+    min-height: 100vh;
+    background: #0f1117;
+    border-right: 1px solid rgba(255,255,255,.06);
+    flex-shrink: 0;
+}
+.nav-item {
+    display:flex; align-items:center; gap:12px;
+    padding:10px 20px; margin:2px 10px;
+    border-radius:8px; color:#9ca3af; text-decoration:none;
+    font-size:14px; transition: all 0.15s;
+}
+.nav-item:hover { background:rgba(255,255,255,.05); color:#f3f4f6; }
+.nav-item.active { background:rgba(99,102,241,.15); color:#818cf8; }
+
+/* ── PREVIEW TABLE ── */
+#preview-wrap {
+    max-height: 340px;
+    overflow-y: auto;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.08);
+    margin-top: 12px;
+}
+#preview-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+#preview-table th {
+    background: #1e2130;
+    color: #818cf8;
+    padding: 7px 10px;
+    text-align: left;
+    position: sticky;
+    top: 0;
+    white-space: nowrap;
+}
+#preview-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: #d1d5db;
+    white-space: nowrap;
+}
+#preview-table tr:hover td { background: rgba(99,102,241,0.06); }
+
+/* ── COLUMN MAPPER ── */
+.mapper-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+}
+.mapper-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.mapper-row label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    min-width: 90px;
+}
+.mapper-row select {
+    flex: 1;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: #1e2130;
+    color: #e2e8f0;
+    font-size: 12px;
+}
+
+/* ── DROP ZONE ── */
+.drop-zone {
+    border: 2px dashed rgba(99,102,241,0.4);
+    border-radius: 10px;
+    padding: 28px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(99,102,241,0.04);
+}
+.drop-zone:hover, .drop-zone.drag-over {
+    border-color: #818cf8;
+    background: rgba(99,102,241,0.1);
+}
+.drop-zone .dz-icon { font-size: 32px; margin-bottom: 8px; }
+.drop-zone p { color: #6b7280; font-size: 13px; }
+.drop-zone strong { color: #818cf8; }
+
+/* badge status */
+.badge-pago    { background: rgba(52,211,153,0.15); color: #34d399; border-radius:99px; padding:2px 8px; font-size:11px; font-weight:700; }
+.badge-pend    { background: rgba(248,113,113,0.15); color: #f87171; border-radius:99px; padding:2px 8px; font-size:11px; font-weight:700; }
+.badge-env     { background: rgba(56,189,248,0.15);  color: #38bdf8; border-radius:99px; padding:2px 8px; font-size:11px; font-weight:700; }
+.badge-nenv    { background: rgba(107,114,128,0.15); color: #9ca3af; border-radius:99px; padding:2px 8px; font-size:11px; font-weight:700; }
+</style>
+</head>
+
+<body class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 min-h-screen">
+<div class="flex">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar fixed top-0 left-0 z-10 flex flex-col">
+    <div class="p-6 border-b border-white/5">
+      <h1 class="text-white text-xl font-bold">VizionVet</h1>
+      <p class="text-gray-500 text-sm">Radiologia Veterinária</p>
+    </div>
+    <div class="py-4">
+      <a href="{% url 'menu' %}"       class="nav-item">⊞ Dashboard</a>
+      <a href="{% url 'dashbord' %}"   class="nav-item">📋 Laudos</a>
+      <a href="{% url 'financeiro' %}" class="nav-item active">💰 Financeiro</a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="ml-[240px] flex-1 p-8">
+
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+      <div>
+        <h1 class="text-4xl font-bold text-white">Financeiro</h1>
+        <p class="text-gray-400">Controle financeiro</p>
+      </div>
+      <div class="flex gap-3">
+        <button class="btn btn-outline btn-accent" onclick="abrirImport()">
+          📥 Importar Excel
+        </button>
+        <button class="btn btn-primary" onclick="novo_lancamento.showModal()">
+          + Novo lançamento
+        </button>
+      </div>
+    </div>
+
+    <!-- Cards -->
+    <div class="grid grid-cols-4 gap-4 mb-8">
+      <div class="card bg-base-200 shadow">
+        <div class="card-body">
+          <h2 class="card-title text-sm text-gray-400">Total</h2>
+          <p class="text-3xl font-bold text-white">R$ {{ total }}</p>
+        </div>
+      </div>
+      <div class="card bg-base-200 shadow">
+        <div class="card-body">
+          <h2 class="card-title text-sm text-gray-400">Recebido</h2>
+          <p class="text-3xl font-bold text-success">R$ {{ total_pago }}</p>
+        </div>
+      </div>
+      <div class="card bg-base-200 shadow">
+        <div class="card-body">
+          <h2 class="card-title text-sm text-gray-400">Pendente</h2>
+          <p class="text-3xl font-bold text-error">R$ {{ total_pendente }}</p>
+        </div>
+      </div>
+      <div class="card bg-base-200 shadow">
+        <div class="card-body">
+          <h2 class="card-title text-sm text-gray-400">Registros</h2>
+          <p class="text-3xl font-bold text-white">{{ lancamentos.count }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela principal -->
+    <div class="card bg-base-100 shadow">
+      <div class="card-body p-0">
+        <div class="overflow-x-auto">
+          <table class="table table-zebra table-sm">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Paciente</th>
+                <th>Tutor</th>
+                <th>Clínica</th>
+                <th>Exame</th>
+                <th>Valor</th>
+                <th>Pagamento</th>
+                <th>Pago</th>
+                <th>Enviado</th>
+                <th>Obs</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in lancamentos %}
+              <tr id="row-{{ item.id }}">
+                <td>{{ item.data }}</td>
+                <td>{{ item.paciente }}</td>
+                <td>{{ item.tutor }}</td>
+                <td>{{ item.clinica }}</td>
+                <td>{{ item.tipo_exame }}</td>
+                <td class="font-mono">R$ {{ item.valor }}</td>
+                <td>{{ item.forma_pagamento }}</td>
+                <td>
+                  {% if item.pago %}
+                    <span class="badge-pago">Sim</span>
+                  {% else %}
+                    <span class="badge-pend">Não</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if item.enviado %}
+                    <span class="badge-env">Sim</span>
+                  {% else %}
+                    <span class="badge-nenv">Não</span>
+                  {% endif %}
+                </td>
+                <td class="max-w-[140px] truncate text-gray-400 text-xs">{{ item.observacoes }}</td>
+                <td>
+                  <button
+                    class="btn btn-xs btn-error btn-outline"
+                    onclick="confirmarExclusao({{ item.id }})"
+                    title="Excluir">
+                    🗑
+                  </button>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="11" class="text-center text-gray-500 py-8">
+                  Nenhum lançamento cadastrado
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL: NOVO LANÇAMENTO
+     ══════════════════════════════════════════ -->
+<dialog id="novo_lancamento" class="modal">
+  <div class="modal-box max-w-lg">
+    <h3 class="font-bold text-lg mb-4">Novo lançamento</h3>
+    <form method="POST" id="formNovo">
+      {% csrf_token %}
+      <div class="grid grid-cols-2 gap-3">
+        <label class="form-control">
+          <span class="label-text text-xs mb-1">Data</span>
+          <input type="date" name="data" class="input input-bordered input-sm w-full" required>
+        </label>
+        <label class="form-control">
+          <span class="label-text text-xs mb-1">Valor</span>
+          <input type="number" step="0.01" name="valor" placeholder="0,00" class="input input-bordered input-sm w-full" required>
+        </label>
+        <label class="form-control">
+          <span class="label-text text-xs mb-1">Paciente</span>
+          <input type="text" name="paciente" class="input input-bordered input-sm w-full">
+        </label>
+        <label class="form-control">
+          <span class="label-text text-xs mb-1">Tutor</span>
+          <input type="text" name="tutor" class="input input-bordered input-sm w-full">
+        </label>
+        <label class="form-control">
+          <span class="label-text text-xs mb-1">Clínica</span>
+          <input type="text" name="clinica" class="input input-bordered input-sm w-full">
+        </label>
+        <label class="form-control">
+          <span class="label-text text-xs mb-1">Tipo de exame</span>
+          <input type="text" name="tipo_exame" class="input input-bordered input-sm w-full">
+        </label>
+        <label class="form-control col-span-2">
+          <span class="label-text text-xs mb-1">Forma de pagamento</span>
+          <input type="text" name="forma_pagamento" class="input input-bordered input-sm w-full">
+        </label>
+        <label class="form-control col-span-2">
+          <span class="label-text text-xs mb-1">Observações</span>
+          <textarea name="observacoes" rows="2" class="textarea textarea-bordered textarea-sm w-full"></textarea>
+        </label>
+      </div>
+      <div class="flex gap-6 mt-3">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" name="pago" class="checkbox checkbox-success checkbox-sm">
+          <span class="text-sm">Pago</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" name="enviado" class="checkbox checkbox-info checkbox-sm">
+          <span class="text-sm">Enviado</span>
+        </label>
+      </div>
+      <div class="flex gap-3 mt-5">
+        <button type="submit" class="btn btn-primary flex-1">Salvar</button>
+        <button type="button" class="btn btn-ghost" onclick="novo_lancamento.close()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+  <form method="dialog" class="modal-backdrop"><button>fechar</button></form>
+</dialog>
+
+<!-- ══════════════════════════════════════════
+     MODAL: CONFIRMAR EXCLUSÃO
+     ══════════════════════════════════════════ -->
+<dialog id="modal_excluir" class="modal">
+  <div class="modal-box max-w-sm">
+    <h3 class="font-bold text-lg mb-2">Excluir lançamento?</h3>
+    <p class="text-gray-400 text-sm mb-6">Essa ação não pode ser desfeita.</p>
+    <div class="flex gap-3">
+      <button class="btn btn-error flex-1" onclick="executarExclusao()">Sim, excluir</button>
+      <button class="btn btn-ghost flex-1" onclick="modal_excluir.close()">Cancelar</button>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop"><button>fechar</button></form>
+</dialog>
+
+<!-- ══════════════════════════════════════════
+     MODAL: IMPORTAR EXCEL
+     ══════════════════════════════════════════ -->
+<dialog id="modal_import" class="modal">
+  <div class="modal-box" style="max-width:780px; background:#12151f;">
+
+    <h3 class="font-bold text-lg text-white mb-1">📥 Importar planilha Excel</h3>
+    <p class="text-gray-500 text-sm mb-5">Carregue um <code>.xlsx</code> ou <code>.csv</code>, mapeie as colunas e confirme a importação.</p>
+
+    <!-- STEP 1: Drop zone -->
+    <div id="step1">
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileXls').click()">
+        <div class="dz-icon">📊</div>
+        <p>Arraste o arquivo aqui ou <strong>clique para selecionar</strong></p>
+        <p class="text-xs mt-1">Suporta .xlsx · .xls · .csv</p>
+      </div>
+      <input type="file" id="fileXls" accept=".xlsx,.xls,.csv" style="display:none">
+    </div>
+
+    <!-- STEP 2: Mapper + preview -->
+    <div id="step2" style="display:none">
+
+      <!-- Sheet selector -->
+      <div class="flex items-center gap-3 mb-3">
+        <label class="text-xs text-gray-400 font-semibold uppercase">Aba:</label>
+        <select id="sheetSelect" class="select select-sm select-bordered bg-base-200 text-white" onchange="trocarAba()"></select>
+        <span id="rowCount" class="text-xs text-gray-500"></span>
+      </div>
+
+      <!-- Mapper -->
+      <div class="bg-base-300 rounded-lg p-4 mb-3">
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Mapear colunas da planilha → campos do sistema</p>
+        <div class="mapper-grid" id="mapperGrid">
+          <!-- gerado por JS -->
+        </div>
+      </div>
+
+      <!-- Preview -->
+      <div id="preview-wrap">
+        <table id="preview-table">
+          <thead id="preview-head"></thead>
+          <tbody id="preview-body"></tbody>
+        </table>
+      </div>
+
+      <div class="flex gap-3 mt-4">
+        <button class="btn btn-success flex-1" onclick="confirmarImport()">
+          ✅ Importar <span id="import-count"></span> registros
+        </button>
+        <button class="btn btn-ghost" onclick="resetImport()">← Voltar</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Resultado -->
+    <div id="step3" style="display:none" class="text-center py-8">
+      <div class="text-5xl mb-4">✅</div>
+      <p class="text-white font-bold text-xl" id="step3-msg"></p>
+      <p class="text-gray-400 text-sm mt-2" id="step3-detail"></p>
+      <button class="btn btn-primary mt-6" onclick="fecharImport()">Fechar</button>
+    </div>
+
+  </div>
+  <form method="dialog" class="modal-backdrop"><button>fechar</button></form>
+</dialog>
+
+<!-- ══════════════════════════════════════════
+     SCRIPTS
+     ══════════════════════════════════════════ -->
+<script>
+/* ── CSRF ── */
+function getCookie(name) {
+  return document.cookie.split(';').map(c => c.trim())
+    .find(c => c.startsWith(name + '='))?.split('=')[1];
+}
+
+/* ══════════════════════════════
+   EXCLUSÃO
+   ══════════════════════════════ */
+let excluirId = null;
+
+function confirmarExclusao(id) {
+  excluirId = id;
+  document.getElementById('modal_excluir').showModal();
+}
+
+function executarExclusao() {
+  if (!excluirId) return;
+  fetch(`/financeiro/excluir/${excluirId}/`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCookie('csrftoken') }
+  })
+  .then(r => {
+    if (r.ok) {
+      const row = document.getElementById('row-' + excluirId);
+      if (row) row.remove();
+      document.getElementById('modal_excluir').close();
+      excluirId = null;
+    } else {
+      alert('Erro ao excluir.');
+    }
+  })
+  .catch(() => alert('Erro de rede.'));
+}
+
+/* ══════════════════════════════
+   IMPORTAÇÃO EXCEL
+   ══════════════════════════════ */
+const CAMPOS = [
+  { key: 'data',            label: 'Data' },
+  { key: 'paciente',        label: 'Paciente' },
+  { key: 'tutor',           label: 'Tutor' },
+  { key: 'clinica',         label: 'Clínica' },
+  { key: 'tipo_exame',      label: 'Tipo de exame' },
+  { key: 'valor',           label: 'Valor' },
+  { key: 'forma_pagamento', label: 'Forma de pagamento' },
+  { key: 'pago',            label: 'Pago (sim/não)' },
+  { key: 'enviado',         label: 'Enviado (sim/não)' },
+  { key: 'observacoes',     label: 'Observações' },
+];
+
+let workbook = null;
+let sheetData = [];   // array de arrays (rows)
+let sheetHeaders = [];
+
+function abrirImport() {
+  document.getElementById('modal_import').showModal();
+}
+
+function fecharImport() {
+  document.getElementById('modal_import').close();
+  setTimeout(resetImport, 300);
+}
+
+function resetImport() {
+  workbook = null; sheetData = []; sheetHeaders = [];
+  document.getElementById('step1').style.display = '';
+  document.getElementById('step2').style.display = 'none';
+  document.getElementById('step3').style.display = 'none';
+  document.getElementById('fileXls').value = '';
+}
+
+/* Drop zone */
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) processarArquivo(e.dataTransfer.files[0]);
+});
+document.getElementById('fileXls').addEventListener('change', e => {
+  if (e.target.files[0]) processarArquivo(e.target.files[0]);
+});
+
+function processarArquivo(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data = new Uint8Array(e.target.result);
+    workbook = XLSX.read(data, { type: 'array', cellDates: true });
+    preencherSheets();
+    carregarAba();
+    document.getElementById('step1').style.display = 'none';
+    document.getElementById('step2').style.display = '';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function preencherSheets() {
+  const sel = document.getElementById('sheetSelect');
+  sel.innerHTML = workbook.SheetNames
+    .map(n => `<option value="${n}">${n}</option>`).join('');
+}
+
+function trocarAba() { carregarAba(); }
+
+function carregarAba() {
+  const nome = document.getElementById('sheetSelect').value;
+  const ws   = workbook.Sheets[nome];
+  // converte para array de arrays
+  const raw  = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+  if (raw.length < 2) {
+    alert('A aba parece vazia ou sem dados.');
+    return;
+  }
+
+  sheetHeaders = raw[0].map(h => String(h ?? '').trim());
+  sheetData    = raw.slice(1).filter(r => r.some(c => c !== '' && c != null));
+
+  document.getElementById('rowCount').textContent =
+    `${sheetData.length} linha${sheetData.length !== 1 ? 's' : ''} encontrada${sheetData.length !== 1 ? 's' : ''}`;
+
+  construirMapper();
+  renderPreview();
+  document.getElementById('import-count').textContent = sheetData.length;
+}
+
+/* ── auto-guess de colunas ── */
+const GUESSES = {
+  data:            ['data','date','dt','dia'],
+  paciente:        ['paciente','animal','pet','nome'],
+  tutor:           ['tutor','dono','proprietário','owner'],
+  clinica:         ['clínica','clinica','clinic','hospital'],
+  tipo_exame:      ['tipo','exame','modalidade','tipo_exame','procedure'],
+  valor:           ['valor','value','price','preco','preço','total'],
+  forma_pagamento: ['pagamento','forma','payment','metodo','método'],
+  pago:            ['pago','paid','recebido'],
+  enviado:         ['enviado','sent','entregue'],
+  observacoes:     ['obs','observação','observacoes','nota','notes','comment'],
+};
+
+function adivinharColuna(campo) {
+  const hints = GUESSES[campo] || [];
+  for (let i = 0; i < sheetHeaders.length; i++) {
+    const h = sheetHeaders[i].toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu,'');
+    if (hints.some(g => h.includes(g))) return String(i);
+  }
+  return '';
+}
+
+function construirMapper() {
+  const grid = document.getElementById('mapperGrid');
+  grid.innerHTML = CAMPOS.map(({ key, label }) => {
+    const opts = sheetHeaders.map((h, i) =>
+      `<option value="${i}" ${adivinharColuna(key) === String(i) ? 'selected' : ''}>${h || `Col ${i+1}`}</option>`
+    ).join('');
+    return `
+      <div class="mapper-row">
+        <label>${label}</label>
+        <select id="map_${key}">
+          <option value="">— ignorar —</option>
+          ${opts}
+        </select>
+      </div>`;
+  }).join('');
+}
+
+function getMapping() {
+  const m = {};
+  CAMPOS.forEach(({ key }) => {
+    const v = document.getElementById('map_' + key)?.value;
+    m[key] = v !== '' ? parseInt(v) : null;
+  });
+  return m;
+}
+
+function cellVal(row, idx) {
+  if (idx === null || idx === undefined) return '';
+  const v = row[idx];
+  if (v == null) return '';
+  if (v instanceof Date) return v.toISOString().slice(0,10);
+  return String(v).trim();
+}
+
+function renderPreview() {
+  const map  = getMapping();
+  const head = document.getElementById('preview-head');
+  const body = document.getElementById('preview-body');
+
+  head.innerHTML = '<tr>' + CAMPOS.map(c => `<th>${c.label}</th>`).join('') + '</tr>';
+
+  body.innerHTML = sheetData.slice(0, 8).map(row => {
+    const cells = CAMPOS.map(({ key }) => {
+      const v = cellVal(row, map[key]);
+      return `<td>${v || '<span style="color:#4b5563">—</span>'}</td>`;
+    }).join('');
+    return `<tr>${cells}</tr>`;
+  }).join('');
+}
+
+// re-render preview quando muda o mapeamento
+document.addEventListener('change', e => {
+  if (e.target.id && e.target.id.startsWith('map_')) renderPreview();
+});
+
+/* ── CONFIRMAR IMPORT ── */
+function confirmarImport() {
+  const map  = getMapping();
+  const rows = sheetData.map(row => {
+    const obj = {};
+    CAMPOS.forEach(({ key }) => {
+      let v = cellVal(row, map[key]);
+      if (key === 'pago' || key === 'enviado') {
+        v = /^(s|sim|yes|true|1)$/i.test(v.trim());
+      }
+      obj[key] = v;
+    });
+    return obj;
+  });
+
+  fetch('/financeiro/importar/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: JSON.stringify({ lancamentos: rows })
+  })
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById('step2').style.display = 'none';
+    document.getElementById('step3').style.display = '';
+    document.getElementById('step3-msg').textContent =
+      `${data.criados ?? rows.length} lançamentos importados!`;
+    document.getElementById('step3-detail').textContent =
+      data.erros ? `${data.erros} linha(s) ignorada(s) por erro.` : 'Todos importados com sucesso.';
+  })
+  .catch(() => alert('Erro ao enviar para o servidor.'));
+}
+</script>
+</body>
+</html>

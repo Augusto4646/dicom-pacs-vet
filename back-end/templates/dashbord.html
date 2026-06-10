@@ -74,6 +74,67 @@
 
     .painel { display: none; }
     .painel.ativo { display: block; }
+
+    /* ── TOGGLE TIPO EXAME ── */
+    .tipo-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      user-select: none;
+    }
+    .tipo-toggle .tipo-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      min-width: 60px;
+      text-align: center;
+      transition: color 0.2s;
+    }
+    /* desligado = raio-x (âmbar), ligado = ultrassom (azul) */
+    .tipo-toggle input:not(:checked) ~ .tipo-label { color: #f59e0b; }
+    .tipo-toggle input:checked       ~ .tipo-label { color: #38bdf8; }
+
+    .tipo-switch {
+      position: relative;
+      width: 42px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+    .tipo-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      position: absolute;
+    }
+    .tipo-slider {
+      position: absolute;
+      inset: 0;
+      background: rgba(245,158,11,0.25);
+      border: 1px solid rgba(245,158,11,0.5);
+      border-radius: 24px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tipo-slider::before {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 2px;
+      top: 2px;
+      background: #f59e0b;
+      border-radius: 50%;
+      transition: all 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+    .tipo-switch input:checked + .tipo-slider {
+      background: rgba(56,189,248,0.2);
+      border-color: rgba(56,189,248,0.5);
+    }
+    .tipo-switch input:checked + .tipo-slider::before {
+      transform: translateX(18px);
+      background: #38bdf8;
+    }
   </style>
 </head>
 
@@ -100,8 +161,8 @@
       <a href="{% url 'dashbord' %}" class="nav-item active">
         <span class="icon">📋</span> Laudos
       </a>
-      <a href="{% url 'sync_exames' %}" class="nav-item">
-        <span class="icon">🔄</span> Financeiro
+      <a href="{% url 'financeiro' %}" class="nav-item">
+        <span class="icon">💰</span> Financeiro
       </a>
 
       <div class="px-4 mt-4 mb-2 text-xs text-gray-600 uppercase tracking-widest font-semibold">Sistema</div>
@@ -133,7 +194,6 @@
       <h1 class="text-2xl font-semibold text-white">Laudos</h1>
       <p class="text-gray-500 text-sm mt-1">Gerencie e acompanhe os exames</p>
     </div>
-    
 
     <!-- TABS -->
     <div class="flex gap-3 mb-6">
@@ -146,9 +206,23 @@
       <button onclick="trocarTab('laudado')" id="btn-laudado" class="tab-btn tab-laudado">
         ✅ Laudado
       </button>
-  <a href="{% url 'sync_exames' %}" class="tab-btn" style="background:rgba(99,102,241,0.15);color:#818cf8;border:1px solid rgba(99,102,241,0.3);">
-    🔄 Sincronizar
-  </a>
+      <a href="{% url 'sync_exames' %}" class="tab-btn" style="background:rgba(99,102,241,0.15);color:#818cf8;border:1px solid rgba(99,102,241,0.3);">
+        🔄 Sincronizar
+      </a>
+    <button>
+<a href="https://pacsvizionxvet.conexao46.com.br/orthanc/app/explorer.html#upload"
+   class="tab-btn"
+   style="
+      background: rgba(239,68,68,0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239,68,68,0.3);
+      padding: 10px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      display: inline-block;
+   ">
+   ➢ Inserir exames
+</a>  </button>
     </div>
 
     <!-- PAINEL AGUARDANDO -->
@@ -164,11 +238,23 @@
                     <td>#{{ exame.id }}</td>
                     <td>{{ exame.paciente.nome }}</td>
                     <td>{{ exame.study_date }}</td>
-                    <td class="flex gap-1">
+                    <td class="flex gap-2 items-center">
                       <a href="{% url 'laudo_editor' exame.id %}" class="btn btn-xs btn-primary">Abrir</a>
-                      <a href="http://vizionvet.com.br/orthanc/ui/app/#/#study?uuid={{ exame.orthanc_id }}" target="_blank" class="btn btn-xs btn-error">DICOM</a>
+                      <a href="https://pacsvizionxvet.conexao46.com.br/orthanc/ui/app/#/#study?uuid={{ exame.orthanc_id }}" target="_blank" class="btn btn-xs btn-error">DICOM</a>
                       <a href="{% url 'baixar_dicom' exame.id %}" class="btn btn-xs btn-warning">Baixar</a>
-                      <a href="{% url 'deletar_exame' exame.id %}" class="btn btn-xs  btn-error">Excluir</a>                    
+                      <a href="{% url 'deletar_exame' exame.id %}" class="btn btn-xs btn-error">Excluir</a>
+                      <label class="tipo-toggle" title="Raio-X / Ultrassom">
+                        <input type="checkbox" class="toggle-tipo" data-id="{{ exame.id }}"
+                               {% if exame.tipo_exame == "ultrassom" %}checked{% endif %}>
+                        <span class="tipo-switch">
+                          <input type="checkbox" class="toggle-tipo-inner" tabindex="-1"
+                                 {% if exame.tipo_exame == "ultrassom" %}checked{% endif %}>
+                          <span class="tipo-slider"></span>
+                        </span>
+                        <span class="tipo-label">
+                          {% if exame.tipo_exame == "ultrassom" %}USG{% else %}Rx{% endif %}
+                        </span>
+                      </label>
                     </td>
                   </tr>
                 {% endif %}
@@ -192,11 +278,23 @@
                     <td>#{{ exame.id }}</td>
                     <td>{{ exame.paciente.nome }}</td>
                     <td>{{ exame.study_date }}</td>
-                    <td class="flex gap-1">
+                    <td class="flex gap-2 items-center">
                       <a href="{% url 'laudo_editor' exame.id %}" class="btn btn-xs btn-primary">Abrir</a>
-                      <a href="http://vizionvet.com.br/orthanc/ui/app/#/#study?uuid={{ exame.orthanc_id }}" target="_blank" class="btn btn-xs btn-error">DICOM</a>
+                      <a href="https://pacsvizionxvet.conexao46.com.br/orthanc/ui/app/#/#study?uuid={{ exame.orthanc_id }}" target="_blank" class="btn btn-xs btn-error">DICOM</a>
                       <a href="{% url 'baixar_dicom' exame.id %}" class="btn btn-xs btn-warning">Baixar</a>
-                      <a href="{% url 'deletar_exame' exame.id %}" class="btn btn-xs  btn-error">Excluir</a>                    
+                      <a href="{% url 'deletar_exame' exame.id %}" class="btn btn-xs btn-error">Excluir</a>
+                      <label class="tipo-toggle" title="Raio-X / Ultrassom">
+                        <input type="checkbox" class="toggle-tipo" data-id="{{ exame.id }}"
+                               {% if exame.tipo_exame == "ultrassom" %}checked{% endif %}>
+                        <span class="tipo-switch">
+                          <input type="checkbox" class="toggle-tipo-inner" tabindex="-1"
+                                 {% if exame.tipo_exame == "ultrassom" %}checked{% endif %}>
+                          <span class="tipo-slider"></span>
+                        </span>
+                        <span class="tipo-label">
+                          {% if exame.tipo_exame == "ultrassom" %}USG{% else %}Rx{% endif %}
+                        </span>
+                      </label>
                     </td>
                   </tr>
                 {% endif %}
@@ -220,11 +318,23 @@
                     <td>#{{ exame.id }}</td>
                     <td>{{ exame.paciente.nome }}</td>
                     <td>{{ exame.study_date }}</td>
-                    <td class="flex gap-1">
+                    <td class="flex gap-2 items-center">
                       <a href="{% url 'laudo_editor' exame.id %}" class="btn btn-xs btn-primary">Abrir</a>
-                      <a href="http://vizionvet.com.br/orthanc/ui/app/#/#study?uuid={{ exame.orthanc_id }}" target="_blank" class="btn btn-xs btn-error">DICOM</a>
+                      <a href="https://pacsvizionxvet.conexao46.com.br/orthanc/ui/app/#/#study?uuid={{ exame.orthanc_id }}" target="_blank" class="btn btn-xs btn-error">DICOM</a>
                       <a href="{% url 'baixar_dicom' exame.id %}" class="btn btn-xs btn-warning">Baixar</a>
-                      <a href="{% url 'deletar_exame' exame.id %}" class="btn btn-xs  btn-error">Excluir</a>                    
+                      <a href="{% url 'deletar_exame' exame.id %}" class="btn btn-xs btn-error">Excluir</a>
+                      <label class="tipo-toggle" title="Raio-X / Ultrassom">
+                        <input type="checkbox" class="toggle-tipo" data-id="{{ exame.id }}"
+                               {% if exame.tipo_exame == "ultrassom" %}checked{% endif %}>
+                        <span class="tipo-switch">
+                          <input type="checkbox" class="toggle-tipo-inner" tabindex="-1"
+                                 {% if exame.tipo_exame == "ultrassom" %}checked{% endif %}>
+                          <span class="tipo-slider"></span>
+                        </span>
+                        <span class="tipo-label">
+                          {% if exame.tipo_exame == "ultrassom" %}USG{% else %}Rx{% endif %}
+                        </span>
+                      </label>
                     </td>
                   </tr>
                 {% endif %}
@@ -253,6 +363,30 @@ function getCookie(name) {
     .find(c => c.startsWith(name + '='))?.split('=')[1];
 }
 
+/* ── TOGGLE TIPO EXAME ── */
+document.addEventListener('change', function(e) {
+  const cb = e.target;
+  if (!cb.classList.contains('toggle-tipo')) return;
+
+  const id    = cb.dataset.id;
+  const tipo  = cb.checked ? 'ultrassom' : 'raiox';
+  const label = cb.closest('.tipo-toggle').querySelector('.tipo-label');
+  const inner = cb.closest('.tipo-toggle').querySelector('.toggle-tipo-inner');
+
+  label.textContent = cb.checked ? 'USG' : 'Rx';
+  inner.checked = cb.checked;
+
+  fetch(`/atualizar_tipo_exame/${id}/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: JSON.stringify({ tipo_exame: tipo })
+  });
+});
+
+/* ── SORTABLE ── */
 document.addEventListener('DOMContentLoaded', function () {
   const opcoes = {
     group: 'shared',
