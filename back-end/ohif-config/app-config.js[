@@ -21,10 +21,10 @@ window.config = {
       configuration: {
         friendlyName: 'Orthanc',
         name: 'orthanc',
-        location: 'http://vizionxvet.conexao46.com.br/',
-        qidoRoot: 'http://vizionxvet.conexao46.com.br/ohif',
-        wadoRoot: 'http://vizionxvet.conexao46.com.br/dicom-web',
-        wadoUriRoot: 'http://vizionxvet.conexao46.com.br/wado',
+        location: 'http://visionxvet.conexao46.com.br/',
+        qidoRoot: 'http://visionxvet.conexao46.com.br/ohif',
+        wadoRoot: 'http://visionxvet.conexao46.com.br/dicom-web',
+        wadoUriRoot: 'http://vissionxvet.conexao46.com.br/wado',
 
         supportsFuzzyMatching: true,
         supportsWildcard: true,

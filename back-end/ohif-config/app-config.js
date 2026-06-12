@@ -1,7 +1,14 @@
+<<<<<<< HEAD
 window.PUBLIC_URL = '/';
 
 window.config = {
   routerBasename: 'viewer/',
+=======
+window.PUBLIC_URL = '/viewer';
+
+window.config = {
+  routerBasename: '/viewer',
+>>>>>>> edbf77cc96544880c2275055cd5a59758b37911a
 
   showStudyList: true,
 

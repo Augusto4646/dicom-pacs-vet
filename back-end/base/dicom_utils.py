@@ -2,7 +2,7 @@ import os
 import requests
 from django.conf import settings
 
-ORTHANC_BASE = "https://pacsvizionxvet.conexao46.com.br/orthanc"
+ORTHANC_BASE = "https://pacsvisionxvet.conexao46.com.br/orthanc"
 
 
 def get_orthanc_study_id(study_instance_uid: str) -> str | None:

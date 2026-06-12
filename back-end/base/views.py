@@ -33,7 +33,7 @@ from django.db.models import Sum
 import io
 import zipfile
 
-ORTHANC_URL = "https://pacsvizionxvet.conexao46.com.br/orthanc"
+ORTHANC_URL = "https://pacsvisionxvet.conexao46.com.br/orthanc"
 
 
 # ---------------------------------------------------------------------------
@@ -790,7 +790,7 @@ def gerar_pdf_completo(request, exame_id):
         writer.add_page(page)
 
     # 2. Anexa imagens DICOM
-    BASE_URL = "https://pacsvizionxvet.conexao46.com.br"
+    BASE_URL = "https://pacsvisionxvet.conexao46.com.br"
     posicoes = [(20, 440), (300, 440), (20, 40), (300, 40)]
 
     for i in range(0, len(imagens), 4):
@@ -876,7 +876,7 @@ def onlyoffice_callback(request, exame_id):
 def forcar_save_onlyoffice(request, exame_id):
     exame = get_object_or_404(Exame, id=exame_id)
     resp  = requests.post(
-        "https://pacsvizionxvet.conexao46.com.br/onlyoffice/coauthoring/CommandService.ashx",
+        "https://pacsvisionxvet.conexao46.com.br/onlyoffice/coauthoring/CommandService.ashx",
         json={"c": "forcesave", "key": f"laudo_{exame.id}"},
         timeout=10,
     )

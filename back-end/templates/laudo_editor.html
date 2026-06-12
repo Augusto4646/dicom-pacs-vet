@@ -5,7 +5,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://unpkg.com/split.js/dist/split.min.js"></script>
-<script src="https://pacsvizionxvet.conexao46.com.br/onlyoffice/web-apps/apps/api/documents/api.js"
+<script src="https://pacsvisionxvet.conexao46.com.br/onlyoffice/web-apps/apps/api/documents/api.js"
         onload="initEditor()"></script>
 
 <style>
@@ -738,7 +738,7 @@ dialog h3 { margin: 0 0 20px; font-size: 17px; font-weight: 700; color: var(--te
         <button class="tab-btn" onclick="setTab(this,'radiografia')">RADIOGRAFIA</button>
       </div>
       <iframe style="flex:1;border:none;"
-        src="https://viewer-vizionxvet.conexao46.com.br/viewer/viewer?StudyInstanceUIDs={{ exame.study_instance_uid }}">
+        src="https://viewer-visionxvet.conexao46.com.br/viewer/viewer?StudyInstanceUIDs={{ exame.study_instance_uid }}">
       </iframe>
     </div>
 
@@ -985,11 +985,11 @@ var docEditor = new DocsAPI.DocEditor("onlyoffice-placeholder", {
     fileType: "docx",
     key: "laudo_{{ exame.id }}_{% now 'U' %}",
     title: "Laudo - {{ exame.paciente.nome }}",
-    url: "https://pacsvizionxvet.conexao46.com.br/blank-docx/?modelo=20&exame_id={{ exame.id }}",
+    url: "https://pacsvisionxvet.conexao46.com.br/blank-docx/?modelo=20&exame_id={{ exame.id }}",
     permissions: { edit: true, download: true, print: true }
   },
   editorConfig: {
-    callbackUrl: "https://pacsvizionxvet.conexao46.com.br/onlyoffice-callback/{{ exame.id }}/",
+    callbackUrl: "https://pacsvisionxvet.conexao46.com.br/onlyoffice-callback/{{ exame.id }}/",
     mode: "edit",
     lang: "pt-BR",
     user: { id: "{{ exame.id }}", name: "Médico" },
@@ -1180,11 +1180,11 @@ function salvarInformacoesEAtualizar() {
             fileType: "docx",
             key: "laudo_{{ exame.id }}_" + Date.now(),
             title: "Laudo - {{ exame.paciente.nome }}",
-            url: `https://pacsvizionxvet.conexao46.com.br/blank-docx/?modelo=20&exame_id={{ exame.id }}&t=${Date.now()}`,
+            url: `https://pacsvisionxvet.conexao46.com.br/blank-docx/?modelo=20&exame_id={{ exame.id }}&t=${Date.now()}`,
             permissions: { edit: true, download: true, print: true }
           },
           editorConfig: {
-            callbackUrl: "https://pacsvizionxvet.conexao46.com.br/onlyoffice-callback/{{ exame.id }}/",
+            callbackUrl: "https://pacsvisionxvet.conexao46.com.br/onlyoffice-callback/{{ exame.id }}/",
             mode: "edit", lang: "pt-BR",
             user: { id: "{{ exame.id }}", name: "Médico" },
             customization: { autosave: false, compactHeader: true, uiTheme: "theme-dark", toolbarNoTabs: false, help: false, about: false, goback: { visible: false } },
@@ -1259,11 +1259,11 @@ function aplicarModelo(modeloId) {
       fileType: "docx",
       key: "laudo_{{ exame.id }}_" + modeloId + "_" + Date.now(),
       title: "Laudo - {{ exame.paciente.nome }}",
-      url: `https://pacsvizionxvet.conexao46.com.br/blank-docx/?modelo=${modeloId}&exame_id={{ exame.id }}&t=${Date.now()}`,
+      url: `https://pacsvisionxvet.conexao46.com.br/blank-docx/?modelo=${modeloId}&exame_id={{ exame.id }}&t=${Date.now()}`,
       permissions: { edit: true, download: true, print: true }
     },
     editorConfig: {
-      callbackUrl: "https://pacsvizionxvet.conexao46.com.br/onlyoffice-callback/{{ exame.id }}/",
+      callbackUrl: "https://pacsvisionxvet.conexao46.com.br/onlyoffice-callback/{{ exame.id }}/",
       mode: "edit",
       lang: "pt-BR",
       user: { id: "{{ exame.id }}", name: "Médico" },
