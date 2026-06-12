@@ -27,7 +27,7 @@
     "Enable": true,
     "Hooks": [
       {
-        "Url": "https://vizionxvet.conexao46.com/webhook/novo-exame/",
+        "Url": "https://visionxvet.conexao46.com/webhook/novo-exame/",
         "Events": ["NewInstance"]
       }
     ]
