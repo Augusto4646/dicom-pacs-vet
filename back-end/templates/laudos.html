@@ -1,0 +1,113 @@
+<div class="chart-card mt-6 overflow-hidden">
+
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h2 class="text-lg font-semibold text-white">
+                📄 Biblioteca de Laudos
+            </h2>
+
+            <p class="text-xs text-gray-500 mt-1">
+                Todos os documentos disponíveis para download.
+            </p>
+        </div>
+
+        <input
+            type="text"
+            placeholder="Buscar paciente..."
+            class="input input-bordered input-sm bg-[#1a1d27] border-white/10 text-white w-64">
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="table">
+
+            <thead>
+                <tr class="text-gray-500 text-xs uppercase">
+                    <th>#</th>
+                    <th>Paciente</th>
+                    <th>Data</th>
+                    <th>Status</th>
+                    <th>Arquivos</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for exame in exames %}
+                {% if exame.docx %}
+
+                <tr class="hover:bg-white/5">
+
+                    <td class="font-mono text-indigo-400">
+                        #{{ exame.id }}
+                    </td>
+
+                    <td>
+                        <div>
+                            <div class="font-medium text-white">
+                                {{ exame.paciente.nome }}
+                            </div>
+
+                            <div class="text-xs text-gray-500">
+                                {{ exame.codigo_acesso }}
+                            </div>
+                        </div>
+                    </td>
+
+                    <td class="text-sm text-gray-400">
+                        {{ exame.data_laudo|date:"d/m/Y" }}
+                    </td>
+
+                    <td>
+
+                        {% if exame.status == "Laudado" %}
+                        <span class="badge badge-success badge-outline">
+                            {{ exame.status }}
+                        </span>
+
+                        {% elif exame.status == "Urgente" %}
+                        <span class="badge badge-error badge-outline">
+                            {{ exame.status }}
+                        </span>
+
+                        {% else %}
+                        <span class="badge badge-warning badge-outline">
+                            {{ exame.status }}
+                        </span>
+                        {% endif %}
+
+                    </td>
+
+                    <td>
+
+                        <div class="flex gap-2">
+
+                            <a href="{% url 'baixar_docx' exame.id %}"
+                               class="btn btn-sm btn-primary">
+
+                                📄 DOCX
+                            </a>
+
+                            {% if exame.pdf %}
+                            <a href="{{ exame.pdf.url }}"
+                               target="_blank"
+                               class="btn btn-sm btn-outline">
+
+                                PDF
+                            </a>
+                            {% endif %}
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+                {% endif %}
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+    </div>
+
+</div>

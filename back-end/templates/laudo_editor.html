@@ -263,6 +263,7 @@ body {
 .field-label {
   display: flex;
   align-items: center;
+  flex-wrap: nowrap;
   gap: 5px;
   font-size: 11px;
   font-weight: 700;
@@ -270,6 +271,15 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.field-label-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .add-btn {
@@ -568,25 +578,23 @@ dialog h3 { margin: 0 0 20px; font-size: 17px; font-weight: 700; color: var(--te
         <button class="tab-btn" onclick="segundoMonitor()">💻 Monitor</button>
         <span style="color:var(--text-muted);padding:0 4px;align-self:center;">🔹</span>
         <button class="tab-btn active" onclick="setTab(this,'ultrassom')">ULTRASSOM</button>
-        <button class="tab-btn" onclick="setTab(this,'ecocardiograma')">ECOCARDIOGRAMA</button>
-        <button class="tab-btn" onclick="setTab(this,'procedimentos')">PROCEDIMENTOS</button>
-        <button class="tab-btn" onclick="setTab(this,'radiografia')">RADIOGRAFIA</button>
+        <button class="tab-btn" onclick="setTab(this,'ecocardiograma')">Raio X</button>
       </div>
 
       <div class="form-body">
         <form method="POST" action="/laudo_editor/{{ exame.id }}/" id="mainForm">
           {% csrf_token %}
           <input type="hidden" name="tipo_exame" id="tipo_exame_hidden" value="{{ exame.tipo_exame|default:'ultrassom' }}">
-
           <div class="field-group">
             <div class="field-label">Data</div>
-            <input type="date" name="data" value="{% now 'Y-m-d' %}">
+            <input type="date" name="data"
+              value="{% if exame.data_laudo %}{{ exame.data_laudo|date:'Y-m-d' }}{% else %}{% now 'Y-m-d' %}{% endif %}">
           </div>
 
           <div class="grid-2">
             <div class="field-group">
               <div class="field-label">
-                Clínica
+                <span class="field-label-text">Clínica</span>
                 <button onclick="abrirClinica()" type="button" class="add-btn">+</button>
                 <button type="button" class="edit-btn" title="Editar">✏</button>
                 <div class="info-icon" title="Informações">i</div>
@@ -595,14 +603,14 @@ dialog h3 { margin: 0 0 20px; font-size: 17px; font-weight: 700; color: var(--te
                 <select name="clinica">
                   <option value="">Selecionar..</option>
                   {% for c in clinicas %}
-                    <option value="{{ c.id }}">{{ c.nome_clinica }}</option>
+                    <option value="{{ c.id }}" {% if exame.financeiro.clinica_id == c.id %}selected{% endif %}>{{ c.nome_clinica }}</option>
                   {% endfor %}
                 </select>
               </div>
             </div>
             <div class="field-group">
               <div class="field-label">
-                Veterinário
+                <span class="field-label-text">Veterinário</span>
                 <button onclick="abrirVeterinario()" type="button" class="add-btn">+</button>
                 <button type="button" class="edit-btn" title="Editar">✏</button>
               </div>
@@ -619,12 +627,12 @@ dialog h3 { margin: 0 0 20px; font-size: 17px; font-weight: 700; color: var(--te
 
           <div class="grid-2">
             <div class="field-group">
-              <div class="field-label">Tutor</div>
+              <div class="field-label"><span class="field-label-text">Tutor</span></div>
               <input type="text" name="Tutor" value="{{ exame.paciente.nome_tutor }}">
             </div>
             <div class="field-group">
               <div class="field-label">
-                Paciente
+                <span class="field-label-text">Paciente</span>
                 <button type="button" class="add-btn">+</button>
                 <button type="button" class="edit-btn">✏</button>
               </div>
@@ -634,7 +642,7 @@ dialog h3 { margin: 0 0 20px; font-size: 17px; font-weight: 700; color: var(--te
 
           <div class="grid-2">
             <div class="field-group">
-              <div class="field-label">Tipo de Exame</div>
+              <div class="field-label"><span class="field-label-text">Tipo de Exame</span></div>
               <div class="select-wrap">
                 <select name="subtipo_exame">
                   <option value="">Rx de tórax</option>
@@ -650,16 +658,70 @@ dialog h3 { margin: 0 0 20px; font-size: 17px; font-weight: 700; color: var(--te
             </div>
             <div class="field-group">
               <div class="field-label">
-                Modelo de Laudo
+                <span class="field-label-text">Modelo de Laudo</span>
                 <button onclick="modelo()" type="button" class="add-btn">+</button>
                 <button type="button" class="edit-btn accent">✏</button>
               </div>
               <div class="select-wrap">
-                <select name="Modelo" id="select-modelo" onchange="aplicarModelo(this.value)">
+                <select name="Modelo" id="select-modelo" onchange="modeloSelecionado=this.value">
                   {% for x in modelos %}
                     <option value="{{ x.id }}">{{ x.nome_modelo }}</option>
                   {% endfor %}
                 </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="field-group">
+              <div class="field-label">
+                <span class="field-label-text">Espécie</span>
+                <button onclick="abrirEspecie()" type="button" class="add-btn">+</button>
+                <button type="button" class="edit-btn">✏</button>
+              </div>
+              <div class="select-wrap">
+                <select name="especie" id="select-especie">
+                  <option value="">Selecionar...</option>
+                  {% for e in especies %}
+                    <option value="{{ e.id }}" {% if exame.paciente.especie_id == e.id %}selected{% endif %}>{{ e.nome }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="field-group">
+              <div class="field-label"><span class="field-label-text">Raça</span></div>
+              <input type="text" name="raca" value="{{ exame.paciente.raca|default:'' }}" placeholder="Ex: Labrador">
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="field-group">
+              <div class="field-label"><span class="field-label-text">Sexo</span></div>
+              <div class="select-wrap">
+                <select name="sexo">
+                  <option value="Indefinido" {% if exame.paciente.sexo == 'Indefinido' %}selected{% endif %}>Indefinido</option>
+                  <option value="Macho"      {% if exame.paciente.sexo == 'Macho'      %}selected{% endif %}>Macho</option>
+                  <option value="Femea"      {% if exame.paciente.sexo == 'Femea'      %}selected{% endif %}>Fêmea</option>
+                </select>
+              </div>
+            </div>
+            <div class="field-group">
+              <div class="field-label"><span class="field-label-text">Idade</span></div>
+              <div style="display:flex;border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;transition:border-color 0.15s;" id="idade-wrap">
+                <input type="number" name="idade" id="idade-input"
+                  value="{{ exame.paciente.idade|default:0 }}"
+                  min="0" max="99" placeholder="0"
+                  style="border:none;border-radius:0;flex:1;background:var(--surface2);width:100%;">
+                <div style="display:flex;flex-direction:column;border-left:1px solid var(--border);">
+                  <button type="button" onclick="stepIdade(1)"
+                    style="flex:1;padding:0 10px;background:var(--surface3);border:none;border-bottom:1px solid var(--border);color:var(--text-dim);font-size:13px;cursor:pointer;line-height:1;"
+                    onmouseover="this.style.background='var(--accent)';this.style.color='white'"
+                    onmouseout="this.style.background='var(--surface3)';this.style.color='var(--text-dim)'">▲</button>
+                  <button type="button" onclick="stepIdade(-1)"
+                    style="flex:1;padding:0 10px;background:var(--surface3);border:none;color:var(--text-dim);font-size:13px;cursor:pointer;line-height:1;"
+                    onmouseover="this.style.background='var(--accent)';this.style.color='white'"
+                    onmouseout="this.style.background='var(--surface3)';this.style.color='var(--text-dim)'">▼</button>
+                </div>
               </div>
             </div>
           </div>
@@ -674,7 +736,7 @@ dialog h3 { margin: 0 0 20px; font-size: 17px; font-weight: 700; color: var(--te
 
           <div class="field-group">
             <div class="field-label">
-              Forma de Pagamento
+              <span class="field-label-text">Forma de Pagamento</span>
               <button type="button" class="add-btn">+</button>
               <button type="button" class="edit-btn">✏</button>
             </div>
@@ -695,14 +757,14 @@ dialog h3 { margin: 0 0 20px; font-size: 17px; font-weight: 700; color: var(--te
 
           <div class="grid-2">
             <div class="field-group">
-              <div class="field-label">Valor <div class="info-icon">i</div></div>
+              <div class="field-label"><span class="field-label-text">Valor</span> <div class="info-icon">i</div></div>
               <div class="valor-input-wrap">
                 <span class="valor-prefix">R$</span>
                 <input type="number" name="valor" id="valor-input" placeholder="0,00" step="0.01" min="0" oninput="calcTotal()">
               </div>
             </div>
             <div class="field-group">
-              <div class="field-label">Repasse <div class="info-icon">i</div></div>
+              <div class="field-label"><span class="field-label-text">Repasse</span> <div class="info-icon">i</div></div>
               <div class="valor-input-wrap">
                 <span class="valor-prefix">R$</span>
                 <input type="number" name="repasse" id="repasse-input" placeholder="0,00" step="0.01" min="0" oninput="calcTotal()">
@@ -721,7 +783,6 @@ dialog h3 { margin: 0 0 20px; font-size: 17px; font-weight: 700; color: var(--te
           </div>
           <span class="badge badge-accent" id="status-pago">Pendente</span>
         </div>
-        <!-- MUDANÇA 1: type="button" + onclick em vez de type="submit" -->
         <button type="button" onclick="salvarInformacoesEAtualizar()" class="submit-btn">Salvar informações</button>
       </div>
     </div>
@@ -827,6 +888,9 @@ dialog h3 { margin: 0 0 20px; font-size: 17px; font-weight: 700; color: var(--te
 const TIPO_EXAME = "{{ exame.tipo_exame|default:'' }}".toLowerCase();
 const IS_USG = TIPO_EXAME === 'ultrassom';
 
+let _docxPendente = false;
+let modeloSelecionado = null;
+
 Split(['#lado_esquerdo', '.editor-panel'], {
   sizes: [44, 56],
   minSize: 300,
@@ -865,10 +929,10 @@ function mostrar(qual) {
 }
 mostrar('laudo');
 
-let usgImagens    = [];
-let usgIdx        = 0;
-let usgZoomLevel  = 1;
-let usgCarregado  = false;
+let usgImagens   = [];
+let usgIdx       = 0;
+let usgZoomLevel = 1;
+let usgCarregado = false;
 
 async function usgInit() {
   if (usgCarregado && usgImagens.length > 0) return;
@@ -917,6 +981,12 @@ async function usgInit() {
   usgGoTo(0);
 }
 
+function stepIdade(delta) {
+  const input = document.getElementById('idade-input');
+  const val = parseInt(input.value) || 0;
+  input.value = Math.max(0, Math.min(99, val + delta));
+}
+
 function usgGoTo(idx) {
   if (usgImagens.length === 0) return;
   idx = (idx + usgImagens.length) % usgImagens.length;
@@ -938,13 +1008,13 @@ function usgGoTo(idx) {
     (idx + 1) + ' / ' + usgImagens.length;
 }
 
-function usgNav(delta)    { usgGoTo(usgIdx + delta); }
-function usgResetZoom()   { usgZoomLevel = 1; document.getElementById('usg_canvas').style.transform = 'scale(1)'; }
-function usgZoom(delta)   {
+function usgNav(delta)   { usgGoTo(usgIdx + delta); }
+function usgResetZoom()  { usgZoomLevel = 1; document.getElementById('usg_canvas').style.transform = 'scale(1)'; }
+function usgZoom(delta)  {
   usgZoomLevel = Math.min(Math.max(usgZoomLevel + delta, 0.5), 4);
   document.getElementById('usg_canvas').style.transform = `scale(${usgZoomLevel})`;
 }
-function usgRecarregar()  { usgCarregado = false; usgImagens = []; usgInit(); }
+function usgRecarregar() { usgCarregado = false; usgImagens = []; usgInit(); }
 
 document.getElementById('usg_main_img').addEventListener('wheel', e => {
   if (document.getElementById('usg_viewer').style.display === 'none') return;
@@ -979,13 +1049,18 @@ function calcTotal() {
     'R$ ' + total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+const editorKey = "laudo_{{ exame.id }}_{{ docx_version }}";
+let currentKey = editorKey;
+
+console.log("EDITOR KEY:", editorKey);
+
 var docEditor = new DocsAPI.DocEditor("onlyoffice-placeholder", {
   documentType: "word",
   document: {
     fileType: "docx",
-    key: "laudo_{{ exame.id }}_{% now 'U' %}",
+    key: editorKey,
     title: "Laudo - {{ exame.paciente.nome }}",
-    url: "https://pacsvisionxvet.conexao46.com.br/blank-docx/?modelo=20&exame_id={{ exame.id }}",
+    url: "https://pacsvisionxvet.conexao46.com.br{{ exame.docx.url }}",
     permissions: { edit: true, download: true, print: true }
   },
   editorConfig: {
@@ -994,7 +1069,7 @@ var docEditor = new DocsAPI.DocEditor("onlyoffice-placeholder", {
     lang: "pt-BR",
     user: { id: "{{ exame.id }}", name: "Médico" },
     customization: {
-      autosave: false,
+      autosave: true,
       compactHeader: true,
       uiTheme: "theme-dark",
       toolbarNoTabs: false,
@@ -1007,35 +1082,66 @@ var docEditor = new DocsAPI.DocEditor("onlyoffice-placeholder", {
   width: "100%",
   events: {
     onDocumentStateChange: function(e) {
-      if (e.data) setStatus('editing');
+      if (e.data) {
+        setStatus('editing');
+        _docxPendente = true;
+      }
     },
     onDownloadAs: async function(e) {
-      const pdfUrl = e.data.url;
-      console.log('[OnlyOffice] PDF URL:', pdfUrl);
+      const url  = e.data.url;
+      const tipo = e.data.fileType;
 
-      const imgsRes = await fetch('/dicom-para-imagens/{{ exame.id }}/');
+      if (tipo === 'docx') {
+        await fetch('/salvar-docx-url/{{ exame.id }}/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+          body: JSON.stringify({ docx_url: url }),
+        });
+        return;
+      }
+
+      // É PDF — fluxo normal
+      const imgsRes  = await fetch('/dicom-para-imagens/{{ exame.id }}/');
       const imgsData = await imgsRes.json();
-      const imagens = imgsData.imagens || [];
+      const imagens  = imgsData.imagens || [];
 
       const res = await fetch('/gerar-pdf-completo/{{ exame.id }}/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
-        body: JSON.stringify({ pdf_url: pdfUrl, imagens: imagens }),
+        body: JSON.stringify({ pdf_url: url, imagens: imagens }),
       });
 
       if (res.ok) {
         const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
+        window.open(URL.createObjectURL(blob), '_blank');
       } else {
         alert('Erro ao gerar PDF completo.');
       }
 
       document.querySelector('.btn-pdf').disabled = false;
       document.querySelector('.btn-pdf').textContent = '📄 PDF';
+
+      // Dispara salvamento silencioso do DOCX
+      docEditor.downloadAs('docx');
     },
   }
 });
+
+setInterval(async () => {
+  if (!_docxPendente) return;
+  try {
+    const response = await fetch('/forcar-save-onlyoffice/{{ exame.id }}/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+      body: JSON.stringify({ key: currentKey })
+    });
+    const data = await response.json();
+    console.log('[AUTOSAVE]', data);
+    if (response.ok) { _docxPendente = false; setStatus('saved'); }
+  } catch (e) {
+    console.error('[AUTOSAVE]', e);
+  }
+}, 10000);
 
 function setStatus(state) {
   const dot  = document.getElementById('status-dot');
@@ -1057,7 +1163,6 @@ async function gerarPDF() {
   const btn = document.querySelector('.btn-pdf');
   btn.disabled = true;
   btn.textContent = '⏳ Gerando...';
-
   try {
     docEditor.downloadAs('pdf');
     await fetch('/atualizar_status_laudo_editor/{{ exame.id }}/', {
@@ -1067,10 +1172,9 @@ async function gerarPDF() {
     });
   } catch(e) {
     alert('Erro ao gerar PDF: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = '📄 PDF';
   }
-
-  btn.disabled = false;
-  btn.textContent = '📄 PDF';
 }
 
 function getCookie(name) {
@@ -1085,7 +1189,7 @@ document.getElementById('fileInput').onchange = function () {
   const file = this.files[0];
   if (!file || !docEditor) return;
   const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = () => {
     const blobUrl = URL.createObjectURL(file);
     docEditor.insertImage({ c: 'add', images: [{ fileType: file.name.split('.').pop(), url: blobUrl }] });
   };
@@ -1108,24 +1212,10 @@ document.addEventListener('paste', e => {
 function copiarHTML()  { }
 function copiarTexto() { }
 function abrirImagem() { document.getElementById('fileInput').click(); }
-function limpar()      { if (docEditor) docEditor.destroyEditor(); initEditor(); }
+function limpar()      { if (docEditor) docEditor.destroyEditor(); }
 
 var docEditor;
-function initEditor() {
-  docEditor = new DocsAPI.DocEditor("onlyoffice-placeholder", {
-    events: {
-      onDocumentStateChange: function(e) {
-        if (e.data) setStatus('editing');
-      },
-      onError: function(e) {
-        console.error('[OnlyOffice] ERRO:', JSON.stringify(e.data));
-      },
-      onAppReady: function() {
-        console.log('[OnlyOffice] editor montado com sucesso');
-      }
-    }
-  });
-}
+function initEditor() { }
 
 function salvar() {
   fetch('/salvar-laudo/', {
@@ -1151,10 +1241,6 @@ function salvar() {
   .catch(() => setStatus('error'));
 }
 
-/* ================================================================
-   MUDANÇA 2: salvarInformacoesEAtualizar
-   Salva o form via fetch, depois recarrega o editor com dados atualizados
-   ================================================================ */
 function salvarInformacoesEAtualizar() {
   const form = document.getElementById('mainForm');
   const data = new FormData(form);
@@ -1163,37 +1249,14 @@ function salvarInformacoesEAtualizar() {
   btn.disabled = true;
   btn.textContent = '⏳ Salvando...';
 
-  fetch(form.action, {
-    method: 'POST',
-    body: data,
-  })
+  fetch(form.action, { method: 'POST', body: data })
   .then(r => {
     if (r.ok) {
-      const modeloId = document.getElementById('select-modelo').value;
-      if (modeloId) {
-        aplicarModelo(modeloId);
-      } else {
-        if (docEditor) docEditor.destroyEditor();
-        docEditor = new DocsAPI.DocEditor("onlyoffice-placeholder", {
-          documentType: "word",
-          document: {
-            fileType: "docx",
-            key: "laudo_{{ exame.id }}_" + Date.now(),
-            title: "Laudo - {{ exame.paciente.nome }}",
-            url: `https://pacsvisionxvet.conexao46.com.br/blank-docx/?modelo=20&exame_id={{ exame.id }}&t=${Date.now()}`,
-            permissions: { edit: true, download: true, print: true }
-          },
-          editorConfig: {
-            callbackUrl: "https://pacsvisionxvet.conexao46.com.br/onlyoffice-callback/{{ exame.id }}/",
-            mode: "edit", lang: "pt-BR",
-            user: { id: "{{ exame.id }}", name: "Médico" },
-            customization: { autosave: false, compactHeader: true, uiTheme: "theme-dark", toolbarNoTabs: false, help: false, about: false, goback: { visible: false } },
-          },
-          height: "100%", width: "100%",
-          events: { onDocumentStateChange: function(e) { if (e.data) setStatus('editing'); } }
-        });
-      }
       setStatus('saved');
+      if (modeloSelecionado) {
+        aplicarModelo(modeloSelecionado);
+        modeloSelecionado = null;
+      }
     }
   })
   .catch(() => setStatus('error'))
@@ -1241,25 +1304,37 @@ function abrirClinica() {
     document.getElementById('dialogModelos').showModal();
   });
 }
-
+function salvarEspecie() {
+  fetch('/criar_especie/', {
+    method: 'POST',
+    body: new FormData(document.getElementById('formNovaEspecie'))
+  })
+  .then(() => fetch('/listar_especies/'))
+  .then(r => r.text())
+  .then(html => { document.getElementById('dialogModelos').innerHTML = html; });
+}
+function abrirEspecie() {
+  fetch('/listar_especies/')
+  .then(r => r.text())
+  .then(html => {
+    document.getElementById('dialogModelos').innerHTML = html;
+    document.getElementById('dialogModelos').showModal();
+  });
+}
 function passar_para_editor(n,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12) {
   document.getElementById('dialogModelos').close();
-  alert('Modelo selecionado. Integração de modelos com OnlyOffice será implementada na próxima etapa.');
 }
 
 function segundoMonitor() { window.open('/view_monitor/{{ exame.id }}/', '_blank'); }
 
-function aplicarModelo(modeloId) {
-  if (!modeloId) return;
-  if (docEditor) docEditor.destroyEditor();
-
-  docEditor = new DocsAPI.DocEditor("onlyoffice-placeholder", {
+function _criarEditorConfig(docUrl, docKey) {
+  return {
     documentType: "word",
     document: {
       fileType: "docx",
-      key: "laudo_{{ exame.id }}_" + modeloId + "_" + Date.now(),
+      key: docKey,
       title: "Laudo - {{ exame.paciente.nome }}",
-      url: `https://pacsvisionxvet.conexao46.com.br/blank-docx/?modelo=${modeloId}&exame_id={{ exame.id }}&t=${Date.now()}`,
+      url: docUrl,
       permissions: { edit: true, download: true, print: true }
     },
     editorConfig: {
@@ -1268,41 +1343,68 @@ function aplicarModelo(modeloId) {
       lang: "pt-BR",
       user: { id: "{{ exame.id }}", name: "Médico" },
       customization: {
-        autosave: false,
-        compactHeader: true,
-        uiTheme: "theme-dark",
-        toolbarNoTabs: false,
-        help: false,
-        about: false,
-        goback: { visible: false },
+        autosave: true, compactHeader: true, uiTheme: "theme-dark",
+        toolbarNoTabs: false, help: false, about: false, goback: { visible: false },
       },
     },
     height: "100%",
     width: "100%",
     events: {
-      onDocumentStateChange: function(e) { if (e.data) setStatus('editing'); },
+      onDocumentStateChange: function(e) {
+        if (e.data) { setStatus('editing'); _docxPendente = true; }
+      },
       onDownloadAs: async function(e) {
-        const pdfUrl = e.data.url;
-        const imgsRes = await fetch('/dicom-para-imagens/{{ exame.id }}/');
+        const url  = e.data.url;
+        const tipo = e.data.fileType;
+
+        if (tipo === 'docx') {
+          await fetch('/salvar-docx-url/{{ exame.id }}/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({ docx_url: url }),
+          });
+          return;
+        }
+
+        // É PDF — fluxo normal
+        const imgsRes  = await fetch('/dicom-para-imagens/{{ exame.id }}/');
         const imgsData = await imgsRes.json();
-        const imagens = imgsData.imagens || [];
+        const imagens  = imgsData.imagens || [];
+
         const res = await fetch('/gerar-pdf-completo/{{ exame.id }}/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
-          body: JSON.stringify({ pdf_url: pdfUrl, imagens: imagens }),
+          body: JSON.stringify({ pdf_url: url, imagens: imagens }),
         });
+
         if (res.ok) {
           const blob = await res.blob();
           window.open(URL.createObjectURL(blob), '_blank');
         } else {
           alert('Erro ao gerar PDF completo.');
         }
+
         document.querySelector('.btn-pdf').disabled = false;
         document.querySelector('.btn-pdf').textContent = '📄 PDF';
+
+        // Dispara salvamento silencioso do DOCX
+        docEditor.downloadAs('docx');
       },
     }
-  });
+  };
+}
 
+function aplicarModelo(modeloId) {
+  if (!modeloId) return;
+  {% if exame.docx %}
+  if (!confirm('⚠️ Este exame já possui um laudo salvo.\n\nTrocar o modelo vai substituir o conteúdo atual. Tem certeza?')) {
+    return;
+  }
+  {% endif %}
+  if (docEditor) docEditor.destroyEditor();
+  currentKey = "laudo_{{ exame.id }}_m" + modeloId + "_" + Date.now();
+  const url = `https://pacsvisionxvet.conexao46.com.br/blank-docx/?modelo=${modeloId}&exame_id={{ exame.id }}&_=${Date.now()}`;
+  docEditor = new DocsAPI.DocEditor("onlyoffice-placeholder", _criarEditorConfig(url, currentKey));
   if (document.getElementById('dialogModelos').open) {
     document.getElementById('dialogModelos').close();
   }
@@ -1315,24 +1417,6 @@ function copiarLink() {
   btn.innerText = '✅ Copiado!';
   setTimeout(() => btn.innerText = orig, 2000);
 }
-
-function salvarSilencioso() {
-  fetch('/salvar-laudo/', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
-    body: JSON.stringify({
-      laudoHTML: '<p>Laudo editado no OnlyOffice — exame {{ exame.id }}</p>',
-      studyInstanceUid: '{{ exame.study_instance_uid }}'
-    })
-  })
-  .then(r => r.json())
-  .then(() => setStatus('saved'))
-  .catch(() => setStatus('error'));
-}
-
-setInterval(() => {
-  if (document.getElementById('status').innerText === 'Editando...') salvarSilencioso();
-}, 10000);
 
 function abrirVeterinario() {
   fetch('/listar_veterinarios/').then(r => r.text()).then(html => {

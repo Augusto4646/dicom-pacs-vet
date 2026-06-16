@@ -15,7 +15,7 @@
       cursor: pointer;
       margin-bottom: 16px;
     }
-    #formCriar input, #formCriar textarea {
+    #formCriar input {
       width: 100%;
       padding: 8px;
       margin-bottom: 10px;
@@ -23,7 +23,6 @@
       border-radius: 6px;
       font-size: 14px;
       box-sizing: border-box;
-      resize: vertical;
       height: 50px;
     }
     #formCriar button[type="button"] {
@@ -38,24 +37,42 @@
 </style>
 
 <div class="painel">
-  <button onclick="document.getElementById('dialogModelos').close()" style="background:#e74c3c;float:right;">✕ Fechar</button>
-  <button onclick="document.getElementById('formCriar').style.display='block'">💾 Criar Nova Clínica</button>
+  <button onclick="document.getElementById('dialogModelos').close()"
+          style="background:#e74c3c;float:right;">
+      ✕ Fechar
+  </button>
 
-  {% for clinica in clinicas %}
+  <button onclick="document.getElementById('formCriar').style.display='block'">
+      💾 Criar Nova Espécie
+  </button>
+
+  {% for especie in especies %}
   <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border:1px solid #ddd; border-radius:6px; margin-bottom:8px; background:#f9f9f9;">
-    <span onclick="selecionarClinica('{{ clinica.id }}', '{{ clinica.nome_clinica }}')">{{ clinica.nome_clinica }}</span>
-    <a href="/deletar_clinica/{{ clinica.id }}/" style="color:#e74c3c; font-weight:bold; text-decoration:none; padding: 0 6px;">−</a>
+    <span onclick="selecionarEspecie('{{ especie.id }}', '{{ especie.nome }}')">
+        {{ especie.nome }}
+    </span>
+
+    <a href="/deletar_especie/{{ especie.id }}/"
+       style="color:#e74c3c; font-weight:bold; text-decoration:none; padding:0 6px;">
+        −
+    </a>
   </div>
+
   {% empty %}
-  <p style="color:#999;">Nenhuma clínica cadastrada.</p>
+  <p style="color:#999;">Nenhuma espécie cadastrada.</p>
   {% endfor %}
 
   <div id="formCriar" style="display:none">
-    <form id="formNovaClinica">
+    <form id="formNovaEspecie">
       {% csrf_token %}
-      <textarea name="nome_clinica" placeholder="Nome da clínica"></textarea>
-      <textarea name="whats_clinica" placeholder="WhatsApp"></textarea>
-      <button type="button" onclick="salvarClinica()">Salvar</button>
+
+      <input type="text"
+             name="nome"
+             placeholder="Nome da espécie">
+
+      <button type="button" onclick="salvarEspecie()">
+          Salvar
+      </button>
     </form>
   </div>
 </div>

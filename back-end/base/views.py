@@ -1,37 +1,35 @@
 import json
 import base64
 import requests
+import hashlib
+import io
+import zipfile
 from django.http import JsonResponse, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
 from django.shortcuts import render, redirect, get_object_or_404
+from django.utils.text import slugify
 from django.core.files.base import ContentFile
 from django.template.loader import render_to_string
 from rest_framework import viewsets
 from docx import Document
-from django.http import FileResponse, Http404
-from django.contrib.auth.decorators import login_required
-from .models import Modelo
-from io import BytesIO
+from django.http import FileResponse
 from PIL import Image
 from pypdf import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
-import requests
 
 from .models import (
     Usuario, Exame, Modelo, Laudo, Paciente, Instituicao,
-    Financeiro, Clinica, VeterinarioPedidor, LancamentoFinanceiro
+    Financeiro, Clinica, VeterinarioPedidor, LancamentoFinanceiro, Especie
 )
 from .serializers import ExameSerializer
 from .util import gerar_codigo_unico
 from base.services.orthanc_sync import sincronizar_estudos
 from base.models import Exame
 from django.db.models import Sum
-import io
-import zipfile
 
 ORTHANC_URL = "https://pacsvisionxvet.conexao46.com.br/orthanc"
 
@@ -84,9 +82,9 @@ def financeiro(request):
         )
         return redirect("financeiro")
 
-    lancamentos    = LancamentoFinanceiro.objects.all().order_by("-data")
-    total          = lancamentos.aggregate(total=Sum("valor"))["total"] or 0
-    total_pago     = lancamentos.filter(pago=True).aggregate(total=Sum("valor"))["total"] or 0
+    lancamentos = LancamentoFinanceiro.objects.all().order_by("-data")
+    total = lancamentos.aggregate(total=Sum("valor"))["total"] or 0
+    total_pago = lancamentos.filter(pago=True).aggregate(total=Sum("valor"))["total"] or 0
     total_pendente = lancamentos.filter(pago=False).aggregate(total=Sum("valor"))["total"] or 0
 
     return render(request, "financeiro.html", {
@@ -113,18 +111,18 @@ def dashbord(request):
 @login_required
 def menu(request):
     usuario, _ = Usuario.objects.get_or_create(user=request.user)
-    inst   = usuario.instituicao_pertencente
+    inst = usuario.instituicao_pertencente
     exames = Exame.objects.filter(instituicao__in=usuario.instituicoes.all()).order_by('-id')
 
-    financeiros   = Financeiro.objects.filter(instituicao=inst)
-    a_receber     = financeiros.filter(pago=False).aggregate(t=Sum('valor'))['t'] or 0
-    recebido      = financeiros.filter(pago=True).aggregate(t=Sum('valor'))['t'] or 0
-    despesa       = financeiros.aggregate(t=Sum('despesa'))['t'] or 0
+    financeiros = Financeiro.objects.filter(instituicao=inst)
+    a_receber = financeiros.filter(pago=False).aggregate(t=Sum('valor'))['t'] or 0
+    recebido = financeiros.filter(pago=True).aggregate(t=Sum('valor'))['t'] or 0
+    despesa = financeiros.aggregate(t=Sum('despesa'))['t'] or 0
     saldo_liquido = recebido - despesa
 
     total_aguardando = exames.filter(status='Aguardando').count()
-    total_urgente    = exames.filter(status='Urgente').count()
-    total_laudado    = exames.filter(status='Laudado').count()
+    total_urgente = exames.filter(status='Urgente').count()
+    total_laudado = exames.filter(status='Laudado').count()
 
     clinicas_devedoras = (
         Financeiro.objects
@@ -181,7 +179,7 @@ def pagina_laudos(request):
 @csrf_exempt
 def salvar_laudo(request):
     if request.method == "POST":
-        data  = json.loads(request.body)
+        data = json.loads(request.body)
         exame = get_object_or_404(Exame, study_instance_uid=data["studyInstanceUid"])
         exame.laudo_html = data["laudoHTML"]
         exame.save()
@@ -198,7 +196,7 @@ def salvar_laudo(request):
 def salvar_pdf(request, exame_id):
     if request.method == "POST":
         exame = get_object_or_404(Exame, id=exame_id)
-        data  = request.POST.get("pdf_base64")
+        data = request.POST.get("pdf_base64")
         if not data:
             return JsonResponse({"error": "pdf_base64 ausente"}, status=400)
         format, imgstr = data.split(";base64,")
@@ -216,8 +214,8 @@ def salvar_pdf(request, exame_id):
 def upload_laudo_pdf(request):
     if request.method == "POST":
         exame_id = request.POST.get("exame_id")
-        pdf      = request.FILES.get("pdf")
-        exame    = get_object_or_404(Exame, id=exame_id)
+        pdf = request.FILES.get("pdf")
+        exame = get_object_or_404(Exame, id=exame_id)
         exame.laudo_pdf.save(f"laudo_{exame.id}.pdf", pdf)
         return JsonResponse({"ok": True})
     return JsonResponse({"error": "invalid method"}, status=405)
@@ -244,7 +242,7 @@ def portal_exame(request, codigo=None):
 def editar_paciente(request, exame_id):
     if request.method == "POST":
         novo_nome = request.POST.get("nome")
-        exame     = get_object_or_404(Exame, id=exame_id)
+        exame = get_object_or_404(Exame, id=exame_id)
         study_uid = exame.study_instance_uid
 
         find = requests.post(
@@ -283,7 +281,7 @@ def baixar_dicom(request, exame_id):
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
         for i, orthanc_id in enumerate(exame.orthanc_ids):
-            url      = f"{ORTHANC_URL}/instances/{orthanc_id}/file"
+            url = f"{ORTHANC_URL}/instances/{orthanc_id}/file"
             response = requests.get(url)
             if response.status_code == 200:
                 zip_file.writestr(f"exame_{exame.id}_{i+1}.dcm", response.content)
@@ -316,7 +314,7 @@ def dicom_para_imagens(request, exame_id):
         print("STATUS:", r.status_code)
         print("BODY:", r.text[:1000])
 
-        results  = r.json()
+        results = r.json()
         study_id = results[0] if results else None
 
         print("study_id =", study_id)
@@ -397,7 +395,7 @@ def deletar_modelo(request, modelo_id):
 
 def listar_clinicas(request):
     usuario, _ = Usuario.objects.get_or_create(user=request.user)
-    clinicas   = Clinica.objects.all()
+    clinicas = Clinica.objects.all()
     return render(request, "pagina_clinicas.html", {"clinicas": clinicas})
 
 
@@ -422,7 +420,7 @@ def deletar_clinica(request, clinica_id):
 def editar_clinica(request, clinica_id):
     clinica = get_object_or_404(Clinica, id=clinica_id)
     if request.method == "POST":
-        clinica.nome_clinica  = request.POST.get("nome_clinica")
+        clinica.nome_clinica = request.POST.get("nome_clinica")
         clinica.whats_clinica = request.POST.get("whats_clinica")
         clinica.save()
         return redirect('/listar_clinicas/')
@@ -452,41 +450,80 @@ def importar_lancamentos(request):
 @login_required
 def laudo_editor(request, exame_id):
     usuario, created = Usuario.objects.get_or_create(user=request.user)
-    exame    = get_object_or_404(Exame, id=exame_id)
-    exames   = Exame.objects.filter(instituicao__in=usuario.instituicoes.all())
-    membros  = exame.instituicao.membros_insituticao.all() if exame.instituicao else []
-    modelos  = Modelo.objects.all()
+    exame = get_object_or_404(Exame, id=exame_id)
+
+    if not exame.docx:
+        doc = Document()
+        buf = io.BytesIO()
+        doc.save(buf)
+        buf.seek(0)
+        exame.docx.save(
+            f"laudo_{exame.id}.docx",
+            ContentFile(buf.read()),
+            save=True
+        )
+
+    docx_version = hashlib.md5(exame.docx.name.encode()).hexdigest()[:8]
+
+    exames = Exame.objects.filter(
+        instituicao__in=usuario.instituicoes.all()
+    )
+
+    membros = (
+        exame.instituicao.membros_insituticao.all()
+        if exame.instituicao else []
+    )
+
+    modelos = Modelo.objects.all()
     clinicas = Clinica.objects.filter(usuario_logado=usuario)
-    vets     = VeterinarioPedidor.objects.all()
+    vets = VeterinarioPedidor.objects.all()
+    especies = Especie.objects.all().order_by("nome")
 
     if request.method == 'POST':
         vet_id = request.POST.get("veterinario_pedidor")
+        especie_id = request.POST.get("especie")
+        data_laudo = request.POST.get("data")
+
+        if data_laudo:
+            exame.data_laudo = data_laudo
+
         if vet_id:
             exame.veterinario_pedidor_id = vet_id
 
+        if especie_id:
+            exame.paciente.especie_id = especie_id
+
         exame.tipo_exame = request.POST.get("tipo_exame")
+
         if not exame.codigo_acesso:
             exame.codigo_acesso = exame._gerar_codigo()
+
         exame.save()
 
-        exame.paciente.nome       = request.POST.get("Paciente")
+        exame.paciente.nome = request.POST.get("Paciente")
         exame.paciente.nome_tutor = request.POST.get("Tutor")
+        exame.paciente.raca = request.POST.get("raca")
+        exame.paciente.sexo = request.POST.get("sexo")
+        exame.paciente.idade = request.POST.get("idade") or 0
         exame.paciente.save()
 
-        valor      = request.POST.get("valor") or 0
-        repasse    = request.POST.get("repasse") or 0
-        pago       = request.POST.get("pago") == "on"
-        forma      = request.POST.get("forma_pagamento") or ""
+        valor = request.POST.get("valor") or 0
+        repasse = request.POST.get("repasse") or 0
+        pago = request.POST.get("pago") == "on"
+        forma = request.POST.get("forma_pagamento") or ""
         clinica_id = request.POST.get("clinica") or None
 
         if exame.financeiro:
-            exame.financeiro.pago                    = pago
-            exame.financeiro.valor                   = valor
+            exame.financeiro.pago = pago
+            exame.financeiro.valor = valor
             exame.financeiro.valor_repasse_a_clinica = repasse
-            exame.financeiro.forma_pagamento         = forma
+            exame.financeiro.forma_pagamento = forma
+
             if clinica_id:
                 exame.financeiro.clinica_id = clinica_id
+
             exame.financeiro.save()
+
         elif exame.instituicao:
             financeiro = Financeiro.objects.create(
                 instituicao=exame.instituicao,
@@ -499,13 +536,17 @@ def laudo_editor(request, exame_id):
             exame.financeiro = financeiro
             exame.save()
 
+    docx_version = hashlib.md5(exame.docx.name.encode()).hexdigest()[:8]
+
     return render(request, "laudo_editor.html", {
         "exame": exame,
         "exames": exames,
+        "docx_version": docx_version,
         "membros": membros,
         "modelos": modelos,
         "clinicas": clinicas,
         "veterinarios": vets,
+        "especies": especies,
     })
 
 
@@ -515,12 +556,12 @@ def laudo_editor(request, exame_id):
 
 def view_monitor(request, exame_id):
     usuario, created = Usuario.objects.get_or_create(user=request.user)
-    exame    = get_object_or_404(Exame, id=exame_id)
-    exames   = Exame.objects.filter(instituicao__in=usuario.instituicoes.all())
-    membros  = exame.instituicao.membros_insituticao.all() if exame.instituicao else []
-    modelos  = Modelo.objects.all()
+    exame = get_object_or_404(Exame, id=exame_id)
+    exames = Exame.objects.filter(instituicao__in=usuario.instituicoes.all())
+    membros = exame.instituicao.membros_insituticao.all() if exame.instituicao else []
+    modelos = Modelo.objects.all()
     clinicas = Clinica.objects.filter(usuario_logado=usuario)
-    vets     = VeterinarioPedidor.objects.all()
+    vets = VeterinarioPedidor.objects.all()
 
     return render(request, "lado_esquerdo.html", {
         "exame": exame,
@@ -550,11 +591,11 @@ def atualizar_status_laudo_editor(request, exame_id):
 
 
 def dashboard_visual(request):
-    exames  = Exame.objects.all()
+    exames = Exame.objects.all()
     colunas = [
-        {"status": "Aguardando", "tema": "sunset",  "titulo": "⏳ Aguardando"},
-        {"status": "Urgente",    "tema": "abyss",   "titulo": "🚨 Urgente"},
-        {"status": "Laudado",    "tema": "forest",  "titulo": "✅ Laudado"},
+        {"status": "Aguardando", "tema": "sunset", "titulo": "⏳ Aguardando"},
+        {"status": "Urgente", "tema": "abyss", "titulo": "🚨 Urgente"},
+        {"status": "Laudado", "tema": "forest", "titulo": "✅ Laudado"},
     ]
     return render(request, "dashbord.html", {"exames": exames, "colunas": colunas})
 
@@ -566,7 +607,7 @@ def dashboard_visual(request):
 def editar_cabecalho(request, exame_id):
     if request.method == "POST":
         novo_nome = request.POST.get("novo_nome")
-        exame     = get_object_or_404(Exame, id=exame_id)
+        exame = get_object_or_404(Exame, id=exame_id)
         for orthanc_id in exame.orthanc_ids:
             requests.post(
                 f"{ORTHANC_URL}/instances/{orthanc_id}/modify",
@@ -629,16 +670,17 @@ def get_modelo_html(request, modelo_id, exame_id):
     from datetime import date
 
     modelo = get_object_or_404(Modelo, id=modelo_id)
-    exame  = get_object_or_404(Exame, id=exame_id)
+    exame = get_object_or_404(Exame, id=exame_id)
 
     html = modelo.html_conteudo or ''
 
-    html = html.replace('{{paciente}}',    exame.paciente.nome or '')
-    html = html.replace('{{tutor}}',       exame.paciente.nome_tutor or '')
-    html = html.replace('{{raca}}',        exame.paciente.raca or '')
-    html = html.replace('{{sexo}}',        exame.paciente.sexo or '')
-    html = html.replace('{{idade}}',       str(exame.paciente.idade) if exame.paciente.idade else '')
+    html = html.replace('{{paciente}}', exame.paciente.nome or '')
+    html = html.replace('{{tutor}}', exame.paciente.nome_tutor or '')
+    html = html.replace('{{raca}}', exame.paciente.raca or '')
+    html = html.replace('{{sexo}}', exame.paciente.sexo or '')
+    html = html.replace('{{idade}}', str(exame.paciente.idade) if exame.paciente.idade else '')
     html = html.replace('{{veterinario}}', exame.veterinario_pedidor.nome if exame.veterinario_pedidor else '')
+    html = html.replace('{{especie}}', exame.paciente.especie.nome if exame.paciente.especie else '')
     html = html.replace(
         '{{clinica}}',
         exame.financeiro.clinica.nome_clinica
@@ -658,7 +700,7 @@ def blank_docx(request):
     from datetime import date
 
     modelo_id = request.GET.get("modelo")
-    exame_id  = request.GET.get("exame_id")
+    exame_id = request.GET.get("exame_id")
 
     if not modelo_id:
         doc = Document()
@@ -682,38 +724,54 @@ def blank_docx(request):
             content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
 
-    # Monta substituições com dados do exame se disponível
     subs = {
-        '{{paciente}}':    '',
-        '{{tutor}}':       '',
-        '{{raca}}':        '',
-        '{{sexo}}':        '',
-        '{{idade}}':       '',
+        '{{paciente}}': '',
+        '{{tutor}}': '',
+        '{{raca}}': '',
+        '{{sexo}}': '',
+        '{{idade}}': '',
+        '{{especie}}': '',
         '{{veterinario}}': '',
-        '{{clinica}}':     '',
-        '{{data}}':        date.today().strftime('%d/%m/%Y'),
+        '{{clinica}}': '',
+        '{{data}}': '',
     }
 
     if exame_id:
         try:
             exame = Exame.objects.get(id=exame_id)
-            subs['{{paciente}}']    = exame.paciente.nome or ''
-            subs['{{tutor}}']       = exame.paciente.nome_tutor or ''
-            subs['{{raca}}']        = exame.paciente.raca or ''
-            subs['{{sexo}}']        = exame.paciente.sexo or ''
-            subs['{{idade}}']       = str(exame.paciente.idade) if exame.paciente.idade else ''
-            subs['{{veterinario}}'] = exame.veterinario_pedidor.nome if exame.veterinario_pedidor else ''
-            subs['{{clinica}}']     = (
-                exame.financeiro.clinica.nome_clinica
-                if exame.financeiro and exame.financeiro.clinica else ''
+
+            data_ref = exame.data_laudo or date.today()
+            meses = [
+                "janeiro", "fevereiro", "março", "abril",
+                "maio", "junho", "julho", "agosto",
+                "setembro", "outubro", "novembro", "dezembro"
+            ]
+
+            subs['{{data}}'] = (
+                f"Novo Hamburgo, {data_ref.day} de "
+                f"{meses[data_ref.month - 1]} de "
+                f"{data_ref.year}."
             )
+
+            subs['{{paciente}}'] = exame.paciente.nome or ''
+            subs['{{tutor}}'] = exame.paciente.nome_tutor or ''
+            subs['{{raca}}'] = exame.paciente.raca or ''
+            subs['{{sexo}}'] = exame.paciente.sexo or ''
+            subs['{{idade}}'] = str(exame.paciente.idade) if exame.paciente.idade else ''
+            subs['{{veterinario}}'] = exame.veterinario_pedidor.nome if exame.veterinario_pedidor else ''
+            subs['{{especie}}'] = exame.paciente.especie.nome if exame.paciente.especie else ''
+            subs['{{clinica}}'] = (
+                exame.financeiro.clinica.nome_clinica
+                if exame.financeiro and exame.financeiro.clinica
+                else ''
+            )
+
         except Exame.DoesNotExist:
             pass
 
     doc = Document(modelo.arquivo_docx.path)
 
     def substituir_paragrafo(paragrafo, subs):
-        # Merge todos os runs em um texto único, substitui, redistribui
         texto_completo = ''.join(run.text for run in paragrafo.runs)
         modificado = False
         for chave, valor in subs.items():
@@ -744,7 +802,7 @@ def blank_docx(request):
     )
     response['Access-Control-Allow-Origin'] = '*'
     return response
-    
+
 
 def servir_docx_modelo(request, modelo_id):
     try:
@@ -778,25 +836,23 @@ def gerar_pdf_completo(request, exame_id):
     if request.method != 'POST':
         return HttpResponse("Method not allowed", status=405)
 
-    data    = json.loads(request.body)
+    data = json.loads(request.body)
     pdf_url = data.get('pdf_url')
     imagens = data.get('imagens', [])
 
-    # 1. Baixa o PDF gerado pelo OnlyOffice
     pdf_bytes = requests.get(pdf_url, timeout=30).content
-    writer    = PdfWriter()
-    reader    = PdfReader(BytesIO(pdf_bytes))
+    writer = PdfWriter()
+    reader = PdfReader(io.BytesIO(pdf_bytes))
     for page in reader.pages:
         writer.add_page(page)
 
-    # 2. Anexa imagens DICOM
     BASE_URL = "https://pacsvisionxvet.conexao46.com.br"
     posicoes = [(20, 440), (300, 440), (20, 40), (300, 40)]
 
     for i in range(0, len(imagens), 4):
-        packet = BytesIO()
-        c      = canvas.Canvas(packet)
-        grupo  = imagens[i:i+4]
+        packet = io.BytesIO()
+        c = canvas.Canvas(packet)
+        grupo = imagens[i:i+4]
         teve_imagem = False
 
         for idx, url in enumerate(grupo):
@@ -804,7 +860,7 @@ def gerar_pdf_completo(request, exame_id):
                 url = BASE_URL + url
             try:
                 img_bytes = requests.get(url, timeout=10).content
-                img = Image.open(BytesIO(img_bytes))
+                img = Image.open(io.BytesIO(img_bytes))
                 c.drawImage(
                     ImageReader(img),
                     posicoes[idx][0], posicoes[idx][1],
@@ -823,11 +879,10 @@ def gerar_pdf_completo(request, exame_id):
             if pages:
                 writer.add_page(pages[0])
 
-    output = BytesIO()
+    output = io.BytesIO()
     writer.write(output)
     output.seek(0)
 
-    # 3. Salva o PDF no exame para o portal
     exame.pdf.save(
         f"laudo_{exame.id}.pdf",
         ContentFile(output.getvalue()),
@@ -848,40 +903,30 @@ def gerar_pdf_completo(request, exame_id):
 
 @csrf_exempt
 def onlyoffice_callback(request, exame_id):
-    data = json.loads(request.body)
-    print(data)
+    try:
+        data = json.loads(request.body)
+        print(data)
+        status = data.get("status")
 
-    if data.get("status") in [2, 4]:
-        print("STATUS =", data.get("status"))
-        print("URL =", data.get("url"))
+        if status in [2, 6] and data.get("url"):
+            print("STATUS =", status)
+            print("URL =", data.get("url"))
+            arquivo_url = data.get("url")
+            arquivo_bytes = requests.get(arquivo_url, timeout=30).content
+            exame = Exame.objects.get(id=exame_id)
+            exame.docx.save(
+                f"laudo_{exame.id}.docx",
+                ContentFile(arquivo_bytes),
+                save=True
+            )
+            print("DOCX SALVO")
+        else:
+            print("STATUS =", status, "- sem ação necessária")
 
-        arquivo_url   = data.get("url")
-        arquivo_bytes = requests.get(arquivo_url).content
-        exame         = Exame.objects.get(id=exame_id)
-        exame.docx.save(
-            f"laudo_{exame.id}.docx",
-            ContentFile(arquivo_bytes),
-            save=True
-        )
-        print("DOCX SALVO")
+    except Exception as e:
+        print("ERRO NO CALLBACK:", e)
 
     return JsonResponse({"error": 0})
-
-
-# ---------------------------------------------------------------------------
-# Forçar save no OnlyOffice
-# ---------------------------------------------------------------------------
-
-@csrf_exempt
-def forcar_save_onlyoffice(request, exame_id):
-    exame = get_object_or_404(Exame, id=exame_id)
-    resp  = requests.post(
-        "https://pacsvisionxvet.conexao46.com.br/onlyoffice/coauthoring/CommandService.ashx",
-        json={"c": "forcesave", "key": f"laudo_{exame.id}"},
-        timeout=10,
-    )
-    print("[forcesave] status:", resp.status_code, "body:", resp.text)
-    return JsonResponse({"ok": True})
 
 
 # ---------------------------------------------------------------------------
@@ -892,3 +937,108 @@ def forcar_save_onlyoffice(request, exame_id):
 def check_docx(request, exame_id):
     exame = get_object_or_404(Exame, id=exame_id)
     return JsonResponse({"ok": bool(exame.docx)})
+
+
+@csrf_exempt
+def salvar_docx_url(request, exame_id):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'invalid method'}, status=405)
+    data = json.loads(request.body)
+    docx_url = data.get('docx_url')
+    if not docx_url:
+        return JsonResponse({'error': 'docx_url ausente'}, status=400)
+    exame = get_object_or_404(Exame, id=exame_id)
+    docx_bytes = requests.get(docx_url, timeout=30).content
+    exame.docx.save(
+        f"laudo_{exame.id}.docx",
+        ContentFile(docx_bytes),
+        save=True
+    )
+    print(f"[autosave] DOCX salvo para exame {exame_id}")
+    return JsonResponse({'ok': True})
+
+
+@csrf_exempt
+def forcar_save_onlyoffice(request, exame_id):
+    exame = get_object_or_404(Exame, id=exame_id)
+
+    try:
+        body = json.loads(request.body)
+        key = body.get("key") or f"laudo_{exame.id}_v1"
+    except Exception:
+        key = f"laudo_{exame.id}_v1"
+
+    resp = requests.post(
+        "https://pacsvisionxvet.conexao46.com.br/onlyoffice/coauthoring/CommandService.ashx",
+        json={"c": "forcesave", "key": key},
+        timeout=10,
+    )
+
+    print("KEY:", key)
+    print("STATUS:", resp.status_code)
+    print("BODY:", resp.text)
+
+    return JsonResponse({
+        "status": resp.status_code,
+        "body": resp.text,
+        "key": key,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Espécies
+# ---------------------------------------------------------------------------
+
+def listar_especies(request):
+    especies = Especie.objects.all()
+    return render(request, "pagina_especies.html", {"especies": especies})
+
+
+def criar_especie(request):
+    if request.method == "POST":
+        Especie.objects.create(
+            nome=request.POST.get("nome"),
+        )
+        especies = Especie.objects.all()
+        return render(request, "pagina_especies.html", {"especies": especies})
+
+
+def deletar_especie(request, especie_id):
+    especie = get_object_or_404(Especie, id=especie_id)
+    especie.delete()
+    return redirect('/listar_especies/')
+from django.http import FileResponse
+
+@login_required
+def baixar_docx(request, exame_id):
+    exame = get_object_or_404(Exame, id=exame_id)
+
+    if not exame.docx:
+        raise Http404("DOCX não encontrado")
+
+    return FileResponse(
+        exame.docx.open("rb"),
+        as_attachment=True,
+        filename=f"laudo_{exame.id}.docx"
+    )
+@login_required
+def pagina_laudos(request):
+    usuario, _ = Usuario.objects.get_or_create(user=request.user)
+
+    exames = (
+        Exame.objects
+        .filter(
+            instituicao__in=usuario.instituicoes.all(),
+            docx__isnull=False
+        )
+        .select_related("paciente")
+        .order_by("-id")
+    )
+
+    return render(
+        request,
+        "pagina_laudos.html",
+        {
+            "exames": exames,
+        }
+    )

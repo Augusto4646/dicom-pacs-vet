@@ -87,5 +87,17 @@ path(
     name='forcar_save_onlyoffice'
 ),
 path('check-docx/<int:exame_id>/', views.check_docx, name='check_docx'),
+path('salvar-docx-url/<int:exame_id>/', views.salvar_docx_url, name='salvar_docx_url'),
+path('forcar-save-onlyoffice/<int:exame_id>/', views.forcar_save_onlyoffice, name='forcar_save_onlyoffice'),
+path('listar_especies/', views.listar_especies, name='listar_especies'),
+path('criar_especie/', views.criar_especie, name='criar_especie'),
+path('deletar_especie/<int:especie_id>/', views.deletar_especie, name='deletar_especie'),
+path('pagina_laudos/', views.pagina_laudos, name='pagina_laudos'),
+path(
+    "baixar-docx/<int:exame_id>/",
+    views.baixar_docx,
+    name="baixar_docx"
+),
+path('laudos/', views.pagina_laudos, name='laudos'),
 
 ]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

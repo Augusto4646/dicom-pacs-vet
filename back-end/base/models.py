@@ -3,9 +3,21 @@ from django.contrib.auth.models import User
 import secrets
 import string
 
+class Especie(models.Model):
+    nome = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.nome
+ 
 class Paciente(models.Model):
     nome = models.CharField(max_length=50)
     raca = models.CharField(max_length=50, default="N/A")
+    especie = models.ForeignKey(
+    Especie,
+    on_delete=models.SET_NULL,
+    null=True,
+    blank=True
+    )    
     idade = models.IntegerField(default=0)
     sexo = models.CharField(max_length=10, default="Indefinido")
     nome_tutor = models.CharField(max_length=50, null=True, blank=True)
@@ -53,6 +65,7 @@ class LancamentoFinanceiro(models.Model):
     paciente = models.CharField(max_length=255)
     tutor = models.CharField(max_length=255, blank=True)
     clinica = models.CharField(max_length=255, blank=True)
+    data_laudo = models.DateField(null=True, blank=True)
     tipo_exame = models.CharField(max_length=255, blank=True)
     valor = models.DecimalField(max_digits=10, decimal_places=2)
     forma_pagamento = models.CharField(max_length=100, blank=True)
@@ -97,12 +110,14 @@ class Exame(models.Model):
     pdf = models.FileField(upload_to="laudos/", blank=True)
     laudo_html = models.TextField(blank=True, null=True)
     study_instance_uid = models.CharField(max_length=255, unique=True)
+    data_laudo = models.DateField(null=True, blank=True)
     accession_number = models.CharField(max_length=100, null=True, blank=True)
     study_date = models.DateField(null=True, blank=True)
     study_time = models.TimeField(null=True, blank=True)
     orthanc_ids = models.JSONField(default=list, blank=True)
     descricao = models.CharField(max_length=255, null=True, blank=True)
     medico_solicitante = models.CharField(max_length=255, null=True, blank=True)
+
     tipo_exame = models.CharField(max_length=255, null=True, blank=True)
     docx = models.FileField(
     upload_to="laudos_docx/",
@@ -129,6 +144,7 @@ class Laudo(models.Model):
     exame = models.ForeignKey(Exame, on_delete=models.CASCADE)
     texto = models.TextField()
     data_finalizacao = models.DateTimeField(auto_now_add=True)
+    docx = models.FileField(upload_to="laudos_docx/", blank=True, null=True)
 
     def __str__(self):
         return f"Laudo - {self.exame.study_instance_uid}"
@@ -175,3 +191,5 @@ class Instituicao(models.Model):
 
     def a_receber(self):
         return sum(f.valor for f in self.financeiros.all() if not f.pago)
+    
+ 

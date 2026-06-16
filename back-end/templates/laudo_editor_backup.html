@@ -1059,9 +1059,9 @@ var docEditor = new DocsAPI.DocEditor("onlyoffice-placeholder", {
   documentType: "word",
   document: {
     fileType: "docx",
-    key: "laudo_{{ exame.id }}_" + Date.now(),
+    key: "laudo_{{ exame.id }}_{% if exame.docx %}{{ exame.docx.name|slugify }}{% else %}novo{% endif %}",
     title: "Laudo - {{ exame.paciente.nome }}",
-    url: "https://pacsvisionxvet.conexao46.com.br/static/blank.docx",
+    url: "{% if exame.docx %}https://pacsvizionxvet.conexao46.com.br{{ exame.docx.url }}{% else %}https://pacsvizionxvet.conexao46.com.br/blank-docx/?modelo=20{% endif %}",
     permissions: {
       edit: true,
       download: true,
@@ -1069,6 +1069,7 @@ var docEditor = new DocsAPI.DocEditor("onlyoffice-placeholder", {
     }
   },
   editorConfig: {
+    callbackUrl: "https://pacsvizionxvet.conexao46.com.br/onlyoffice-callback/{{ exame.id }}/",
     mode: "edit",
     lang: "pt-BR",
     user: {
@@ -1090,6 +1091,25 @@ var docEditor = new DocsAPI.DocEditor("onlyoffice-placeholder", {
   events: {
     onDocumentStateChange: function(e) {
       if (e.data) setStatus('editing');
+    },
+    onDownloadAs: async function(e) {
+      const pdfUrl = e.data.url;
+      const imgsRes = await fetch('/dicom-para-imagens/{{ exame.id }}/');
+      const imgsData = await imgsRes.json();
+      const imagens = imgsData.imagens || [];
+      const res = await fetch('/gerar-pdf-completo/{{ exame.id }}/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        body: JSON.stringify({ pdf_url: pdfUrl, imagens: imagens }),
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        window.open(URL.createObjectURL(blob), '_blank');
+      } else {
+        alert('Erro ao gerar PDF completo.');
+      }
+      document.querySelector('.btn-pdf').disabled = false;
+      document.querySelector('.btn-pdf').textContent = '📄 PDF';
     },
   }
 });
@@ -1239,15 +1259,16 @@ function passar_para_editor(n,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12) {
 
 function segundoMonitor() { window.open('/view_monitor/{{ exame.id }}/', '_blank'); }
 
-async function aplicarModelo(id) {
-  const resp = await fetch(`/get-modelo-html/${id}/{{ exame.id }}/`);
-  const data = await resp.json();
-  if (data.html) {
-    // stub — mesma observação acima
-    console.log('[OnlyOffice] modelo recebido, integração pendente:', data.html.length, 'chars');
+function aplicarModelo(modeloId) {
+  if (!modeloId) return;
+  {% if exame.docx %}
+  if (!confirm('⚠️ Este exame já possui um laudo salvo.\n\nTrocar o modelo vai substituir o conteúdo atual. Tem certeza?')) {
+    // Reverte o select para o valor anterior
+    return;
   }
-}
-
+  {% endif %}
+  if (docEditor) docEditor.destroyEditor();
+} 
 function copiarLink() {
   navigator.clipboard.writeText(document.getElementById('modalLink').value);
   const btn = document.querySelector('#modalSalvo .btn-copiar');
